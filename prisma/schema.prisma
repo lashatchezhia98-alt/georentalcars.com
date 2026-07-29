@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum FuelType {
+  PETROL
+  DIESEL
+}
+enum Transmission {
+  AUTOMATIC
+  MANUAL
+}
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+enum AdminRole {
+  FULL
+  LIMITED
+}
+enum ContactNumberType {
+  PHONE
+  WHATSAPP
+}
+
+model CarCategory {
+  id String @id @default(cuid())
+  name String @unique
+  cars Car[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model Car {
+  id String @id @default(cuid())
+  name String
+  categoryId String
+  category CarCategory @relation(fields: [categoryId], references: [id])
+  description String
+  dailyPrice Decimal @db.Decimal(10,2)
+  engineSpecification String
+  seatCount Int
+  fuelType FuelType
+  transmission Transmission
+  isAvailable Boolean @default(true)
+  photos CarPhoto[]
+  bookings Booking[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model CarPhoto {
+  id String @id @default(cuid())
+  carId String
+  car Car @relation(fields: [carId], references: [id], onDelete: Cascade)
+  cloudinaryPublicId String
+  secureUrl String
+  sortOrder Int
+  createdAt DateTime @default(now())
+  @@unique([carId, sortOrder])
+}
+model Booking {
+  id String @id @default(cuid())
+  carId String
+  car Car @relation(fields: [carId], references: [id])
+  customerName String
+  customerPhone String
+  customerEmail String
+  customerLanguage String
+  pickupLocation String
+  startDate DateTime
+  endDate DateTime
+  totalDays Int
+  dailyPrice Decimal @db.Decimal(10,2)
+  discountPercent Decimal @db.Decimal(5,2)
+  promoDiscountPercent Decimal @default(0) @db.Decimal(5,2)
+  totalPrice Decimal @db.Decimal(10,2)
+  promoCodeId String?
+  promoCode PromoCode? @relation(fields: [promoCodeId], references: [id])
+  status BookingStatus @default(PENDING)
+  promoUsage PromoUsage?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  returnedAt DateTime?
+  @@index([carId, startDate, endDate, status])
+}
+model PromoCode {
+  id String @id @default(cuid())
+  code String @unique
+  companyName String
+  discountPercent Decimal @db.Decimal(5,2)
+  isActive Boolean @default(true)
+  bookings Booking[]
+  usages PromoUsage[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model PromoUsage {
+  id String @id @default(cuid())
+  promoCodeId String
+  promoCode PromoCode @relation(fields: [promoCodeId], references: [id])
+  bookingId String @unique
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  usedAt DateTime @default(now())
+}
+model AdminUser {
+  id String @id @default(cuid())
+  email String @unique
+  passwordHash String
+  role AdminRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model DiscountSettings {
+  id String @id @default(cuid())
+  startDay Int @default(6)
+  basePercent Decimal @default(6) @db.Decimal(5,2)
+  incrementPerDay Decimal @default(1) @db.Decimal(5,2)
+  maxPercent Decimal @default(30) @db.Decimal(5,2)
+  updatedAt DateTime @updatedAt
+}
+model ContactSettings {
+  id String @id @default(cuid())
+  address String
+  googleMapsUrl String
+  telegramUrl String?
+  telegramActive Boolean @default(false)
+  facebookUrl String?
+  facebookActive Boolean @default(false)
+  instagramUrl String?
+  instagramActive Boolean @default(false)
+  numbers ContactNumber[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model ContactNumber {
+  id String @id @default(cuid())
+  contactSettingsId String
+  contactSettings ContactSettings @relation(fields: [contactSettingsId], references: [id], onDelete: Cascade)
+  type ContactNumberType
+  number String
+  label String?
+  isActive Boolean @default(true)
+  sortOrder Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([contactSettingsId, type, isActive, sortOrder])
+}
