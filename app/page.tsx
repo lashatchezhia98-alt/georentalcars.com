@@ -51,5 +51,18 @@ export default async function Home() {
       phone,
       whatsapp,
     }}
+    content={{
+      heroEyebrow: settings?.heroEyebrow || "Made for the road ahead",
+      heroTitle: settings?.heroTitle || "Georgia,",
+      heroAccent: settings?.heroAccent || "your way.",
+      heroCopy: settings?.heroCopy || "Adventure-ready cars. Transparent pricing. Local support — wherever the road takes you.",
+      fleetEyebrow: settings?.fleetEyebrow || "The right car for every road",
+      fleetTitle: settings?.fleetTitle || "Choose your ride",
+      fleetCopy: settings?.fleetCopy || "From Tbilisi streets to mountain passes, every vehicle is prepared, inspected, and ready.",
+      contactEyebrow: settings?.contactEyebrow || "Local people. Real support.",
+      contactTitle: settings?.contactTitle || "Let’s talk",
+      contactCopy: settings?.contactCopy || "Questions about a route or vehicle? Our local team is ready to help before, during, and after your trip.",
+      footerTagline: settings?.footerTagline || "Made for Georgia",
+    }}
   />;
 }

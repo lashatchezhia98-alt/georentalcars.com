@@ -19,6 +19,11 @@ type PickupLocation = {
 type PublicContact = {
   address: string; googleMapsUrl: string; phone: string; whatsapp: string;
 };
+type PublicContent = {
+  heroEyebrow: string; heroTitle: string; heroAccent: string; heroCopy: string;
+  fleetEyebrow: string; fleetTitle: string; fleetCopy: string;
+  contactEyebrow: string; contactTitle: string; contactCopy: string; footerTagline: string;
+};
 
 const messages = { ka, en, ru, ar } as const;
 const fallbackCars: Car[] = [
@@ -70,14 +75,16 @@ export default function RentalExperience({
     phone: "+995592710606",
     whatsapp: "+995592710606",
   },
+  content,
 }: {
   heroImageUrl?: string;
   pickupLocations?: PickupLocation[];
   cars?: Car[];
   categories?: string[];
   contact?: PublicContact;
+  content?: PublicContent;
 }) {
-  const [locale, setLocale] = useState<Locale>("ka");
+  const [locale, setLocale] = useState<Locale>("en");
   const [menu, setMenu] = useState(false);
   const [category, setCategory] = useState("All");
   const [selectedCar, setSelectedCar] = useState<Car>(cars[0] || fallbackCars[0]);
@@ -89,6 +96,11 @@ export default function RentalExperience({
   const [returnId, setReturnId] = useState(pickupLocations[0]?.id || "office-tbilisi");
   const [sent, setSent] = useState(false);
   const t = messages[locale];
+  const publicCopy = locale === "en" && content ? {
+    hero: { ...t.hero, eyebrow: content.heroEyebrow, title: content.heroTitle, accent: content.heroAccent, copy: content.heroCopy },
+    cars: { ...t.cars, eyebrow: content.fleetEyebrow, title: content.fleetTitle, copy: content.fleetCopy },
+    contact: { ...t.contact, eyebrow: content.contactEyebrow, title: content.contactTitle, copy: content.contactCopy },
+  } : t;
   const rtl = locale === "ar";
   const visibleCars = category === "All" ? cars : cars.filter((car) => car.category === category);
   const days = dateDays(start, end);
@@ -165,9 +177,9 @@ export default function RentalExperience({
         <div className="hero-bg" style={{ backgroundImage: `url("${heroImageUrl}")` }} />
         <GeorgiaMapMark />
         <div className="hero-content">
-          <span className="eyebrow">{t.hero.eyebrow}</span>
-          <h1>{t.hero.title}<em>{t.hero.accent}</em></h1>
-          <p>{t.hero.copy}</p>
+          <span className="eyebrow">{publicCopy.hero.eyebrow}</span>
+          <h1>{publicCopy.hero.title}<em>{publicCopy.hero.accent}</em></h1>
+          <p>{publicCopy.hero.copy}</p>
           <div className="hero-actions">
             <button className="button" onClick={() => beginBooking()}>{t.hero.cta} <span>↗</span></button>
             <a className="text-link" href="#cars">{t.hero.secondary} <span>↓</span></a>
@@ -185,8 +197,8 @@ export default function RentalExperience({
 
       <section id="cars" className="section cars-section">
         <div className="section-heading">
-          <div><span className="eyebrow">{t.cars.eyebrow}</span><h2>{t.cars.title}</h2></div>
-          <p>{t.cars.copy}</p>
+          <div><span className="eyebrow">{publicCopy.cars.eyebrow}</span><h2>{publicCopy.cars.title}</h2></div>
+          <p>{publicCopy.cars.copy}</p>
         </div>
         <div className="filters">
           {categories.map((item) => <button key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item === "All" ? t.cars.all : item}</button>)}
@@ -207,7 +219,7 @@ export default function RentalExperience({
 
       <section id="contact" className="contact section">
         <div>
-          <span className="eyebrow">{t.contact.eyebrow}</span><h2>{t.contact.title}</h2><p>{t.contact.copy}</p>
+          <span className="eyebrow">{publicCopy.contact.eyebrow}</span><h2>{publicCopy.contact.title}</h2><p>{publicCopy.contact.copy}</p>
           <div className="contact-list">
             <a href={contact.googleMapsUrl} target="_blank" rel="noreferrer"><b>⌖</b><span><small>{t.contact.office}</small>{contact.address}</span></a>
             <a href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}><b>☎</b><span><small>{t.contact.call}</small>{contact.phone}</span></a>
@@ -219,7 +231,7 @@ export default function RentalExperience({
         </a>
       </section>
 
-      <footer><a className="brand" href="#home"><BrandMark /><span className="brand-name">Geo<span>Rental</span>Cars</span></a><p>© 2026 GeoRentalCars.com</p><span>Made for Georgia</span></footer>
+      <footer><a className="brand" href="#home"><BrandMark /><span className="brand-name">Geo<span>Rental</span>Cars</span></a><p>© 2026 GeoRentalCars.com</p><span>{content?.footerTagline || "Made for Georgia"}</span></footer>
 
       {bookingOpen && <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setBookingOpen(false)}>
         <section className="booking-modal" role="dialog" aria-modal="true" aria-labelledby="booking-title">

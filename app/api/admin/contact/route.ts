@@ -1,0 +1,30 @@
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { z } from "zod";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+const schema = z.object({
+  address: z.string().trim().min(3).max(240),
+  googleMapsUrl: z.url(),
+  phone: z.string().trim().min(7).max(30),
+  whatsapp: z.string().trim().min(7).max(30),
+});
+
+export async function PATCH(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const parsed = schema.safeParse(await request.json());
+  if (!parsed.success) return NextResponse.json({ error: "Invalid contact details" }, { status: 400 });
+  const contact = await prisma.contactSettings.upsert({
+    where: { id: "default" },
+    update: { address: parsed.data.address, googleMapsUrl: parsed.data.googleMapsUrl },
+    create: { id: "default", address: parsed.data.address, googleMapsUrl: parsed.data.googleMapsUrl },
+  });
+  await prisma.contactNumber.deleteMany({ where: { contactSettingsId: contact.id, type: { in: ["PHONE", "WHATSAPP"] } } });
+  await prisma.contactNumber.createMany({ data: [
+    { contactSettingsId: contact.id, type: "PHONE", number: parsed.data.phone, isActive: true, sortOrder: 0 },
+    { contactSettingsId: contact.id, type: "WHATSAPP", number: parsed.data.whatsapp, isActive: true, sortOrder: 0 },
+  ] });
+  return NextResponse.json({ ok: true });
+}
