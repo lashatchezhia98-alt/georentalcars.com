@@ -72,6 +72,7 @@ model Booking {
   customerPhone String
   customerEmail String
   birthDate DateTime
+  flightNumber String?
   passportNumber String?
   driverLicenseNumber String?
   driverLicenseExpiry DateTime?

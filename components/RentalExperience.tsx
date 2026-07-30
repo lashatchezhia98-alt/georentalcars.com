@@ -54,10 +54,10 @@ const fallbackPickupLocations: PickupLocation[] = [
   { id: "batumi-airport", nameKa: "ბათუმის საერთაშორისო აეროპორტი", nameEn: "Batumi International Airport", nameRu: "Аэропорт Батуми", nameAr: "مطار باتومي الدولي", fee: 120 },
 ];
 const identityLabels = {
-  ka: { birthDate: "დაბადების თარიღი", passportNumber: "პასპორტის ნომერი", driverLicenseNumber: "მართვის მოწმობის ნომერი", driverLicenseExpiry: "მართვის მოწმობის ვადა", returnLocation: "დაბრუნების ადგილი", chooseCar: "აირჩიეთ ავტომობილი" },
-  en: { birthDate: "Date of birth", passportNumber: "Passport number", driverLicenseNumber: "Driver’s license number", driverLicenseExpiry: "Driver’s license expiry date", returnLocation: "Return location", chooseCar: "Choose a car" },
-  ru: { birthDate: "Дата рождения", passportNumber: "Номер паспорта", driverLicenseNumber: "Номер водительских прав", driverLicenseExpiry: "Срок действия водительских прав", returnLocation: "Место возврата", chooseCar: "Выберите автомобиль" },
-  ar: { birthDate: "تاريخ الميلاد", passportNumber: "رقم جواز السفر", driverLicenseNumber: "رقم رخصة القيادة", driverLicenseExpiry: "تاريخ انتهاء رخصة القيادة", returnLocation: "موقع الإرجاع", chooseCar: "اختر سيارة" },
+  ka: { birthDate: "დაბადების თარიღი", flightNumber: "ფრენის ნომერი — ნებაყოფლობითი", passportNumber: "პასპორტის ნომერი", driverLicenseNumber: "მართვის მოწმობის ნომერი", driverLicenseExpiry: "მართვის მოწმობის ვადა", returnLocation: "დაბრუნების ადგილი", chooseCar: "აირჩიეთ ავტომობილი" },
+  en: { birthDate: "Date of birth", flightNumber: "Flight number — optional", passportNumber: "Passport number", driverLicenseNumber: "Driver’s license number", driverLicenseExpiry: "Driver’s license expiry date", returnLocation: "Return location", chooseCar: "Choose a car" },
+  ru: { birthDate: "Дата рождения", flightNumber: "Номер рейса — необязательно", passportNumber: "Номер паспорта", driverLicenseNumber: "Номер водительских прав", driverLicenseExpiry: "Срок действия водительских прав", returnLocation: "Место возврата", chooseCar: "Выберите автомобиль" },
+  ar: { birthDate: "تاريخ الميلاد", flightNumber: "رقم الرحلة — اختياري", passportNumber: "رقم جواز السفر", driverLicenseNumber: "رقم رخصة القيادة", driverLicenseExpiry: "تاريخ انتهاء رخصة القيادة", returnLocation: "موقع الإرجاع", chooseCar: "اختر سيارة" },
 };
 const galleryLabels = {
   ka: { view: "დათვალიერება", details: "ავტომობილის დეტალები", previous: "წინა ფოტო", next: "შემდეგი ფოტო", book: "დაჯავშნა" },
@@ -331,6 +331,7 @@ export default function RentalExperience({
               <label>{t.booking.first}<input required name="firstName" /></label><label>{t.booking.last}<input required name="lastName" /></label>
               <label>{t.booking.phone}<input required name="phone" type="tel" /></label><label>{t.booking.email}<input required name="email" type="email" /></label>
               <label>{identityLabels[locale].birthDate}<input required name="birthDate" type="date" max={adultCutoff} onClick={showCalendar} /></label>
+              <label>{identityLabels[locale].flightNumber}<input name="flightNumber" autoComplete="off" /></label>
               <label>{identityLabels[locale].passportNumber}<input name="passportNumber" autoComplete="off" /></label>
               <label>{identityLabels[locale].driverLicenseNumber}<input name="driverLicenseNumber" autoComplete="off" /></label>
               <label>{identityLabels[locale].driverLicenseExpiry}<input name="driverLicenseExpiry" type="date" min={end || today} onClick={showCalendar} /></label>

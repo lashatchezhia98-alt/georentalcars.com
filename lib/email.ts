@@ -16,6 +16,7 @@ export async function sendBookingEmails(data: Record<string, string | number>) {
     ["Phone / WhatsApp", data.customerPhone],
     ["Email", data.customerEmail],
     ["Date of birth", data.birthDate],
+    ["Flight number", data.flightNumber],
     ["Passport number", data.passportNumber],
     ["Driver’s license number", data.driverLicenseNumber],
     ["Driver’s license expiry", data.driverLicenseExpiry],

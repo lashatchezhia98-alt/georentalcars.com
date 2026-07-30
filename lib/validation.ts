@@ -15,6 +15,10 @@ export const bookingSchema = z.object({
   phone: z.string().trim().regex(/^\+?[0-9 ()-]{7,22}$/),
   email: z.email(),
   birthDate: z.iso.date(),
+  flightNumber: z.preprocess(
+    (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.string().trim().min(2).max(20).regex(/^[A-Za-z0-9 -]+$/).optional(),
+  ),
   passportNumber: optionalDocumentNumber(30),
   driverLicenseNumber: optionalDocumentNumber(40),
   driverLicenseExpiry: optionalDate,
