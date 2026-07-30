@@ -184,7 +184,7 @@ export default function RentalExperience({
             <button className="button" onClick={() => beginBooking()}>{t.hero.cta} <span>↗</span></button>
             <a className="text-link" href="#cars">{t.hero.secondary} <span>↓</span></a>
           </div>
-          <div className="trust"><span>24/7 <small>{t.hero.support}</small></span><span>0₾ <small>{t.hero.hidden}</small></span></div>
+          <div className="trust"><span>24/7</span></div>
         </div>
         <div className="availability-card">
           <div className="pickup-field"><span>{t.booking.pickup}</span><select aria-label={t.booking.pickup} value={pickupId} onChange={(event) => setPickupId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></div>
