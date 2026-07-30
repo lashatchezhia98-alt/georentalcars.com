@@ -39,7 +39,6 @@ const fallbackCategories = [
   "Electric / Hybrid",
   "Jeep Wrangler",
 ];
-const blockedDates = ["2026-08-02", "2026-08-03", "2026-08-11"];
 const fallbackPickupLocations: PickupLocation[] = [
   { id: "office-tbilisi", nameKa: "თბილისის ოფისი — ქართველიშვილის 8", nameEn: "Tbilisi Office — 8 Kartvelishvili St.", nameRu: "Офис в Тбилиси", nameAr: "مكتب تبليسي", fee: 0 },
   { id: "tbilisi-airport", nameKa: "თბილისის საერთაშორისო აეროპორტი", nameEn: "Tbilisi International Airport", nameRu: "Аэропорт Тбилиси", nameAr: "مطار تبليسي الدولي", fee: 0 },
@@ -48,10 +47,10 @@ const fallbackPickupLocations: PickupLocation[] = [
   { id: "batumi-airport", nameKa: "ბათუმის საერთაშორისო აეროპორტი", nameEn: "Batumi International Airport", nameRu: "Аэропорт Батуми", nameAr: "مطار باتومي الدولي", fee: 120 },
 ];
 const identityLabels = {
-  ka: { birthDate: "დაბადების თარიღი", passportNumber: "პასპორტის ნომერი", driverLicenseNumber: "მართვის მოწმობის ნომერი", driverLicenseExpiry: "მართვის მოწმობის ვადა", returnLocation: "დაბრუნების ადგილი" },
-  en: { birthDate: "Date of birth", passportNumber: "Passport number", driverLicenseNumber: "Driver’s license number", driverLicenseExpiry: "Driver’s license expiry date", returnLocation: "Return location" },
-  ru: { birthDate: "Дата рождения", passportNumber: "Номер паспорта", driverLicenseNumber: "Номер водительских прав", driverLicenseExpiry: "Срок действия водительских прав", returnLocation: "Место возврата" },
-  ar: { birthDate: "تاريخ الميلاد", passportNumber: "رقم جواز السفر", driverLicenseNumber: "رقم رخصة القيادة", driverLicenseExpiry: "تاريخ انتهاء رخصة القيادة", returnLocation: "موقع الإرجاع" },
+  ka: { birthDate: "დაბადების თარიღი", passportNumber: "პასპორტის ნომერი", driverLicenseNumber: "მართვის მოწმობის ნომერი", driverLicenseExpiry: "მართვის მოწმობის ვადა", returnLocation: "დაბრუნების ადგილი", chooseCar: "აირჩიეთ ავტომობილი" },
+  en: { birthDate: "Date of birth", passportNumber: "Passport number", driverLicenseNumber: "Driver’s license number", driverLicenseExpiry: "Driver’s license expiry date", returnLocation: "Return location", chooseCar: "Choose a car" },
+  ru: { birthDate: "Дата рождения", passportNumber: "Номер паспорта", driverLicenseNumber: "Номер водительских прав", driverLicenseExpiry: "Срок действия водительских прав", returnLocation: "Место возврата", chooseCar: "Выберите автомобиль" },
+  ar: { birthDate: "تاريخ الميلاد", passportNumber: "رقم جواز السفر", driverLicenseNumber: "رقم رخصة القيادة", driverLicenseExpiry: "تاريخ انتهاء رخصة القيادة", returnLocation: "موقع الإرجاع", chooseCar: "اختر سيارة" },
 };
 
 function dateDays(start: string, end: string) {
@@ -103,10 +102,7 @@ export default function RentalExperience({
   const rentalTotal = subtotal * (1 - discount / 100) * (1 - promoDiscount / 100);
   const total = rentalTotal + pickupFee + returnFee;
   const pickupName = (location: PickupLocation) => ({ ka: location.nameKa, en: location.nameEn, ru: location.nameRu, ar: location.nameAr })[locale];
-  const hasConflict = useMemo(() => {
-    if (!start || !end) return false;
-    return blockedDates.some((date) => date >= start && date <= end);
-  }, [start, end]);
+  const hasConflict = useMemo(() => Boolean(start && end && end < start), [start, end]);
   const today = new Date().toISOString().slice(0, 10);
   const adultCutoff = new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().slice(0, 10);
 
@@ -126,6 +122,10 @@ export default function RentalExperience({
   }, [bookingOpen]);
 
   function beginBooking(car = selectedCar) { setSelectedCar(car); setSent(false); setBookingOpen(true); }
+  function changeStartDate(value: string) {
+    setStart(value);
+    if (end && end < value) setEnd("");
+  }
   async function submitBooking(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!days || hasConflict) return;
@@ -177,7 +177,7 @@ export default function RentalExperience({
         <div className="availability-card">
           <div className="pickup-field"><span>{t.booking.pickup}</span><select aria-label={t.booking.pickup} value={pickupId} onChange={(event) => setPickupId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></div>
           <div className="pickup-field"><span>{identityLabels[locale].returnLocation}</span><select aria-label={identityLabels[locale].returnLocation} value={returnId} onChange={(event) => setReturnId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></div>
-          <div><span>{t.booking.start}</span><input aria-label={t.booking.start} type="date" min={today} value={start} onChange={(e) => setStart(e.target.value)} /></div>
+          <div><span>{t.booking.start}</span><input aria-label={t.booking.start} type="date" min={today} value={start} onChange={(e) => changeStartDate(e.target.value)} /></div>
           <div><span>{t.booking.end}</span><input aria-label={t.booking.end} type="date" min={start || today} value={end} onChange={(e) => setEnd(e.target.value)} /></div>
           <button className="button" onClick={() => document.querySelector("#cars")?.scrollIntoView()}>{t.booking.search}</button>
         </div>
@@ -227,7 +227,19 @@ export default function RentalExperience({
           {sent ? <div className="success"><span>✓</span><h2>{t.booking.success}</h2><p>{t.booking.successCopy}</p><button className="button" onClick={() => setBookingOpen(false)}>{t.booking.done}</button></div> :
           <form onSubmit={submitBooking}>
             <span className="eyebrow">{t.booking.eyebrow}</span><h2 id="booking-title">{t.booking.title}</h2>
-            <div className="selected-car"><img src={selectedCar.image} alt="" /><div><small>{selectedCar.category}</small><strong>{selectedCar.name}</strong><span>${selectedCar.price} / {t.cars.day}</span></div></div>
+            <div className="selected-car">
+              <img src={selectedCar.image} alt={selectedCar.name} />
+              <label>
+                <small>{identityLabels[locale].chooseCar}</small>
+                <select value={selectedCar.id} onChange={(event) => {
+                  const car = cars.find((item) => item.id === event.target.value);
+                  if (car) setSelectedCar(car);
+                }}>
+                  {cars.map((car) => <option key={car.id} value={car.id}>{car.name} — ${car.price} / {t.cars.day}</option>)}
+                </select>
+                <span>{selectedCar.category}</span>
+              </label>
+            </div>
             <div className="form-grid">
               <label>{t.booking.first}<input required name="firstName" /></label><label>{t.booking.last}<input required name="lastName" /></label>
               <label>{t.booking.phone}<input required name="phone" type="tel" /></label><label>{t.booking.email}<input required name="email" type="email" /></label>
@@ -235,7 +247,7 @@ export default function RentalExperience({
               <label>{identityLabels[locale].passportNumber}<input required name="passportNumber" autoComplete="off" /></label>
               <label>{identityLabels[locale].driverLicenseNumber}<input required name="driverLicenseNumber" autoComplete="off" /></label>
               <label>{identityLabels[locale].driverLicenseExpiry}<input required name="driverLicenseExpiry" type="date" min={end || today} /></label>
-              <label>{t.booking.start}<input required name="startDate" type="date" min={today} value={start} onChange={(e) => setStart(e.target.value)} /></label>
+              <label>{t.booking.start}<input required name="startDate" type="date" min={today} value={start} onChange={(e) => changeStartDate(e.target.value)} /></label>
               <label>{t.booking.end}<input required name="endDate" type="date" min={start || today} value={end} onChange={(e) => setEnd(e.target.value)} /></label>
               <label>{t.booking.pickup}<select required name="pickupLocation" value={pickupId} onChange={(event) => setPickupId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></label>
               <label>{identityLabels[locale].returnLocation}<select required name="returnLocation" value={returnId} onChange={(event) => setReturnId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></label>
