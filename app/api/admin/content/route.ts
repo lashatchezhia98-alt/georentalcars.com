@@ -17,16 +17,22 @@ const schema = z.object({
   contactCopy: z.string().trim().min(1).max(600),
   footerTagline: z.string().trim().min(1).max(120),
 });
+const localizedSchema = z.object({
+  en: schema,
+  ka: schema,
+  ru: schema,
+  ar: schema,
+});
 
 export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const parsed = schema.safeParse(await request.json());
+  const parsed = localizedSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "Invalid content" }, { status: 400 });
   const settings = await prisma.siteSettings.upsert({
     where: { id: "default" },
-    update: parsed.data,
-    create: { id: "default", heroImageUrl: "/hero-wrangler-climb.png", ...parsed.data },
+    update: { localizedContent: parsed.data, ...parsed.data.en },
+    create: { id: "default", heroImageUrl: "/hero-wrangler-climb.png", localizedContent: parsed.data, ...parsed.data.en },
   });
   return NextResponse.json(settings);
 }

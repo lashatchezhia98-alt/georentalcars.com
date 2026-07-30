@@ -7,6 +7,8 @@ type AdminPickupLocation = { id:string;nameKa:string;nameEn:string;nameRu:string
 type AdminBooking = { id: string; customer: string; car: string; dates: string; status: string; price: string };
 type AdminStats = { total: number; pending: number; confirmed: number; rejected: number; availableCars: number };
 type AdminContent = { heroEyebrow:string;heroTitle:string;heroAccent:string;heroCopy:string;fleetEyebrow:string;fleetTitle:string;fleetCopy:string;contactEyebrow:string;contactTitle:string;contactCopy:string;footerTagline:string };
+type ContentLocale = "en"|"ka"|"ru"|"ar";
+type LocalizedAdminContent = Record<ContentLocale,AdminContent>;
 type AdminCategory = { id:string;name:string };
 type AdminPromoCode = { id:string;code:string;companyName:string;discountPercent:number;isActive:boolean };
 type AdminCarPhoto = { url:string;publicId:string };
@@ -20,13 +22,14 @@ const sections = [
 
 export default function AdminDashboard(props: {
   email:string;coverUrl:string;pickupLocations:AdminPickupLocation[];bookings:AdminBooking[];stats:AdminStats;
-  content:AdminContent;cars:AdminCar[];categories:AdminCategory[];promoCodes:AdminPromoCode[];contact:AdminContact;
+  content:LocalizedAdminContent;cars:AdminCar[];categories:AdminCategory[];promoCodes:AdminPromoCode[];contact:AdminContact;
 }) {
   const [section,setSection]=useState("მთავარი");
   const [cover,setCover]=useState(props.coverUrl);
   const [locations,setLocations]=useState(props.pickupLocations);
   const [bookings,setBookings]=useState(props.bookings);
   const [content,setContent]=useState(props.content);
+  const [contentLocale,setContentLocale]=useState<ContentLocale>("en");
   const [cars,setCars]=useState(props.cars);
   const [categories,setCategories]=useState(props.categories);
   const [promoCodes,setPromoCodes]=useState(props.promoCodes);
@@ -110,12 +113,12 @@ export default function AdminDashboard(props: {
       {message&&<p className="admin-message">{message}</p>}
       {section==="მთავარი"&&<><div className="stat-grid"><article><span>ყველა ჯავშანი</span><strong>{props.stats.total}</strong><small>სულ მიღებული მოთხოვნა</small></article><article><span>მოლოდინში</span><strong>{props.stats.pending}</strong><small>საჭიროებს რეაგირებას</small></article><article><span>დადასტურებული / უარყოფილი</span><strong>{props.stats.confirmed} / {props.stats.rejected}</strong><small>მიმდინარე სტატუსები</small></article><article><span>ხელმისაწვდომი მანქანები</span><strong>{props.stats.availableCars}</strong><small>აქტიური ავტომობილები</small></article></div><BookingsTable bookings={bookings.slice(0,8)} onStatus={updateBooking}/></>}
       {section==="ჯავშნები"&&<BookingsTable bookings={bookings} onStatus={updateBooking}/>}
-      {section==="საიტის ტექსტები"&&<Panel title="ინგლისური მთავარი კონტენტი"><form className="content-form" onSubmit={e=>{e.preventDefault();patch("/api/admin/content",content,"საიტის ტექსტები შენახულია.")}}>
+      {section==="საიტის ტექსტები"&&<Panel title="საიტის ტექსტები — ყველა ენა"><div className="content-language-tabs">{([["en","English"],["ka","ქართული"],["ru","Русский"],["ar","العربية"]] as [ContentLocale,string][]).map(([code,label])=><button type="button" className={contentLocale===code?"active":""} key={code} onClick={()=>setContentLocale(code)}>{label}</button>)}</div><p className="content-language-note">თითოეული ენის ტექსტი დამოუკიდებლად იწერება და ავტომატურად არ ითარგმნება.</p><form className="content-form" dir={contentLocale==="ar"?"rtl":"ltr"} onSubmit={e=>{e.preventDefault();patch("/api/admin/content",content,"ყველა ენის ტექსტები შენახულია.")}}>
         {([
           ["heroEyebrow","მთავარი — ზედა პატარა ტექსტი"],["heroTitle","მთავარი სათაური"],["heroAccent","იასამნისფერი სათაური"],["heroCopy","მთავარი აღწერა"],
           ["fleetEyebrow","ავტომობილები — პატარა ტექსტი"],["fleetTitle","ავტომობილების სათაური"],["fleetCopy","ავტომობილების აღწერა"],
           ["contactEyebrow","კონტაქტი — პატარა ტექსტი"],["contactTitle","კონტაქტის სათაური"],["contactCopy","კონტაქტის აღწერა"],["footerTagline","Footer-ის ტექსტი"],
-        ] as [keyof AdminContent,string][]).map(([key,label])=><label key={key}>{label}{key.endsWith("Copy")?<textarea value={content[key]} onChange={e=>setContent({...content,[key]:e.target.value})}/>:<input value={content[key]} onChange={e=>setContent({...content,[key]:e.target.value})}/>}</label>)}<button className="button">ტექსტების შენახვა</button></form></Panel>}
+        ] as [keyof AdminContent,string][]).map(([key,label])=><label key={key}>{label}{key.endsWith("Copy")?<textarea value={content[contentLocale][key]} onChange={e=>setContent({...content,[contentLocale]:{...content[contentLocale],[key]:e.target.value}})}/>:<input value={content[contentLocale][key]} onChange={e=>setContent({...content,[contentLocale]:{...content[contentLocale],[key]:e.target.value}})}/>}</label>)}<button className="button">ყველა ენის ტექსტების შენახვა</button></form></Panel>}
       {section==="ავტომობილები"&&<Panel title="ავტომობილების მართვა" button="+ ავტომობილის დამატება" onButton={addCar}><div className="car-editor">{cars.map((car,index)=><article key={car.id}><div className="admin-photo-manager">
         <div className="admin-photo-grid">{car.photos.map((photo,photoIndex)=><div key={`${photo.publicId}-${photoIndex}`}><img src={photo.url} alt={`${car.name} ${photoIndex+1}`}/><button type="button" onClick={()=>setCars(rows=>rows.map((item,i)=>i===index?{...item,photos:item.photos.filter((_,p)=>p!==photoIndex)}:item))}>×</button></div>)}</div>
         <label className="photo-upload">1–6 ფოტოს ატვირთვა<input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={e=>uploadCarPhotos(index,e.target.files)}/></label>

@@ -173,6 +173,7 @@ model SiteSettings {
   contactTitle           String   @default("Let’s talk")
   contactCopy            String   @default("Questions about a route or vehicle? Our local team is ready to help before, during, and after your trip.")
   footerTagline          String   @default("Made for Georgia")
+  localizedContent       Json?
   updatedAt              DateTime @updatedAt
 }
 

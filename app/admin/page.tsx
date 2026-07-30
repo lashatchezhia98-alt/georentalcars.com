@@ -3,6 +3,10 @@ import { redirect } from "next/navigation";
 import AdminDashboard from "@/components/AdminDashboard";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import en from "@/messages/en.json";
+import ka from "@/messages/ka.json";
+import ru from "@/messages/ru.json";
+import ar from "@/messages/ar.json";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +25,22 @@ export default async function AdminPage() {
     prisma.promoCode.findMany({ orderBy: { createdAt: "desc" } }).catch(() => []),
   ]);
   const stats = Object.fromEntries(bookingStats.map((row) => [row.status, row._count._all]));
+  const defaultContent = {
+    en: {
+      heroEyebrow: settings?.heroEyebrow || en.hero.eyebrow, heroTitle: settings?.heroTitle || en.hero.title,
+      heroAccent: settings?.heroAccent || en.hero.accent, heroCopy: settings?.heroCopy || en.hero.copy,
+      fleetEyebrow: settings?.fleetEyebrow || en.cars.eyebrow, fleetTitle: settings?.fleetTitle || en.cars.title,
+      fleetCopy: settings?.fleetCopy || en.cars.copy, contactEyebrow: settings?.contactEyebrow || en.contact.eyebrow,
+      contactTitle: settings?.contactTitle || en.contact.title, contactCopy: settings?.contactCopy || en.contact.copy,
+      footerTagline: settings?.footerTagline || "Made for Georgia",
+    },
+    ka: { heroEyebrow:ka.hero.eyebrow,heroTitle:ka.hero.title,heroAccent:ka.hero.accent,heroCopy:ka.hero.copy,fleetEyebrow:ka.cars.eyebrow,fleetTitle:ka.cars.title,fleetCopy:ka.cars.copy,contactEyebrow:ka.contact.eyebrow,contactTitle:ka.contact.title,contactCopy:ka.contact.copy,footerTagline:"შექმნილია საქართველოსთვის" },
+    ru: { heroEyebrow:ru.hero.eyebrow,heroTitle:ru.hero.title,heroAccent:ru.hero.accent,heroCopy:ru.hero.copy,fleetEyebrow:ru.cars.eyebrow,fleetTitle:ru.cars.title,fleetCopy:ru.cars.copy,contactEyebrow:ru.contact.eyebrow,contactTitle:ru.contact.title,contactCopy:ru.contact.copy,footerTagline:"Создано для Грузии" },
+    ar: { heroEyebrow:ar.hero.eyebrow,heroTitle:ar.hero.title,heroAccent:ar.hero.accent,heroCopy:ar.hero.copy,fleetEyebrow:ar.cars.eyebrow,fleetTitle:ar.cars.title,fleetCopy:ar.cars.copy,contactEyebrow:ar.contact.eyebrow,contactTitle:ar.contact.title,contactCopy:ar.contact.copy,footerTagline:"صُنع من أجل جورجيا" },
+  };
+  const localizedContent = settings?.localizedContent && typeof settings.localizedContent === "object"
+    ? settings.localizedContent as typeof defaultContent
+    : defaultContent;
   return <AdminDashboard
     email={session.user.email}
     coverUrl={settings?.heroImageUrl || "/hero-wrangler-climb.png"}
@@ -37,19 +57,7 @@ export default async function AdminPage() {
       price: `$${Number(booking.totalPrice).toFixed(2)}`,
     }))}
     stats={{ total: bookings.length, pending: stats.PENDING || 0, confirmed: stats.CONFIRMED || 0, rejected: stats.REJECTED || 0, availableCars }}
-    content={{
-      heroEyebrow: settings?.heroEyebrow || "Made for the road ahead",
-      heroTitle: settings?.heroTitle || "Georgia,",
-      heroAccent: settings?.heroAccent || "your way.",
-      heroCopy: settings?.heroCopy || "Adventure-ready cars. Transparent pricing. Local support — wherever the road takes you.",
-      fleetEyebrow: settings?.fleetEyebrow || "The right car for every road",
-      fleetTitle: settings?.fleetTitle || "Choose your ride",
-      fleetCopy: settings?.fleetCopy || "From Tbilisi streets to mountain passes, every vehicle is prepared, inspected, and ready.",
-      contactEyebrow: settings?.contactEyebrow || "Local people. Real support.",
-      contactTitle: settings?.contactTitle || "Let’s talk",
-      contactCopy: settings?.contactCopy || "Questions about a route or vehicle? Our local team is ready to help before, during, and after your trip.",
-      footerTagline: settings?.footerTagline || "Made for Georgia",
-    }}
+    content={localizedContent}
     cars={cars.map((car) => ({
       id: car.id, name: car.name, categoryId: car.categoryId, description: car.description,
       dailyPrice: Number(car.dailyPrice), engineSpecification: car.engineSpecification, seatCount: car.seatCount,

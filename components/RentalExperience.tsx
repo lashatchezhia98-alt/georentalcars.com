@@ -24,6 +24,7 @@ type PublicContent = {
   fleetEyebrow: string; fleetTitle: string; fleetCopy: string;
   contactEyebrow: string; contactTitle: string; contactCopy: string; footerTagline: string;
 };
+type LocalizedPublicContent = Record<Locale,PublicContent>;
 
 const messages = { ka, en, ru, ar } as const;
 const fallbackCars: Car[] = [
@@ -88,7 +89,7 @@ export default function RentalExperience({
   cars?: Car[];
   categories?: string[];
   contact?: PublicContact;
-  content?: PublicContent;
+  content?: LocalizedPublicContent;
 }) {
   const [locale, setLocale] = useState<Locale>("en");
   const [menu, setMenu] = useState(false);
@@ -105,10 +106,11 @@ export default function RentalExperience({
   const [sent, setSent] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const t = messages[locale];
-  const publicCopy = locale === "en" && content ? {
-    hero: { ...t.hero, eyebrow: content.heroEyebrow, title: content.heroTitle, accent: content.heroAccent, copy: content.heroCopy },
-    cars: { ...t.cars, eyebrow: content.fleetEyebrow, title: content.fleetTitle, copy: content.fleetCopy },
-    contact: { ...t.contact, eyebrow: content.contactEyebrow, title: content.contactTitle, copy: content.contactCopy },
+  const activeContent = content?.[locale];
+  const publicCopy = activeContent ? {
+    hero: { ...t.hero, eyebrow: activeContent.heroEyebrow, title: activeContent.heroTitle, accent: activeContent.heroAccent, copy: activeContent.heroCopy },
+    cars: { ...t.cars, eyebrow: activeContent.fleetEyebrow, title: activeContent.fleetTitle, copy: activeContent.fleetCopy },
+    contact: { ...t.contact, eyebrow: activeContent.contactEyebrow, title: activeContent.contactTitle, copy: activeContent.contactCopy },
   } : t;
   const rtl = locale === "ar";
   const visibleCars = category === "All" ? cars : cars.filter((car) => car.category === category);
@@ -247,7 +249,7 @@ export default function RentalExperience({
         </a>
       </section>
 
-      <footer><a className="brand" href="#home"><BrandMark /><span className="brand-name">Geo<span>Rental</span>Cars</span></a><p>© 2026 GeoRentalCars.com</p><span>{content?.footerTagline || "Made for Georgia"}</span></footer>
+      <footer><a className="brand" href="#home"><BrandMark /><span className="brand-name">Geo<span>Rental</span>Cars</span></a><p>© 2026 GeoRentalCars.com</p><span>{activeContent?.footerTagline || "Made for Georgia"}</span></footer>
 
       {detailsOpen && <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setDetailsOpen(false)}>
         <section className="car-details-modal" role="dialog" aria-modal="true" aria-labelledby="car-details-title">
