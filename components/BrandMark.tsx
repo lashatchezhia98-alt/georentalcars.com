@@ -1,7 +1,11 @@
 "use client";
 
+import type { MouseEvent } from "react";
+
 export default function BrandMark() {
-  const playEngineRoar = () => {
+  const playEngineRoar = (event: MouseEvent<HTMLSpanElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
     const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextClass) return;
     const context = new AudioContextClass();
