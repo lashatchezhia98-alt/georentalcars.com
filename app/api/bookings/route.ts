@@ -3,6 +3,7 @@ import { bookingSchema } from "@/lib/validation";
 import { calculatePrice, durationDiscount, rentalDays } from "@/lib/pricing";
 import { prisma } from "@/lib/prisma";
 import { sendBookingEmails } from "@/lib/email";
+import { Prisma } from "@prisma/client";
 
 const recent = new Map<string, number>();
 
@@ -19,6 +20,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid booking details", fields: parsed.error.flatten() }, { status: 400 });
   }
   const data = parsed.data;
+  const existingRequest = await prisma.booking.findUnique({ where: { requestToken: data.requestToken } });
+  if (existingRequest) {
+    return NextResponse.json({ id: existingRequest.id, status: existingRequest.status, duplicate: true }, { status: 200 });
+  }
   const start = new Date(`${data.startDate}T00:00:00Z`);
   const end = new Date(`${data.endDate}T00:00:00Z`);
   const birthDate = new Date(`${data.birthDate}T00:00:00Z`);
@@ -69,8 +74,11 @@ export async function POST(request: Request) {
   const rentalTotal = calculatePrice(days, dailyPrice, rentalDiscount, promoDiscount);
   const totalPrice = rentalTotal + pickupFee + returnFee;
 
-  const booking = await prisma.booking.create({
-    data: {
+  let booking;
+  try {
+    booking = await prisma.booking.create({
+      data: {
+      requestToken: data.requestToken,
       carId: car.id,
       customerName: `${data.firstName} ${data.lastName}`,
       customerPhone: data.phone,
@@ -93,8 +101,15 @@ export async function POST(request: Request) {
       totalPrice,
       promoCodeId: promo?.id,
       promoUsage: promo ? { create: { promoCodeId: promo.id } } : undefined,
-    },
-  });
+      },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const duplicate = await prisma.booking.findUnique({ where: { requestToken: data.requestToken } });
+      if (duplicate) return NextResponse.json({ id: duplicate.id, status: duplicate.status, duplicate: true }, { status: 200 });
+    }
+    throw error;
+  }
 
   await sendBookingEmails({
     language: data.language,

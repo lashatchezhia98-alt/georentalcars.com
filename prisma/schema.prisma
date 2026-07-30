@@ -65,6 +65,7 @@ model CarPhoto {
 }
 model Booking {
   id String @id @default(cuid())
+  requestToken String? @unique
   carId String
   car Car @relation(fields: [carId], references: [id])
   customerName String
@@ -89,6 +90,8 @@ model Booking {
   promoCodeId String?
   promoCode PromoCode? @relation(fields: [promoCodeId], references: [id])
   status BookingStatus @default(PENDING)
+  statusEmailSentFor BookingStatus?
+  statusEmailSentAt DateTime?
   promoUsage PromoUsage?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

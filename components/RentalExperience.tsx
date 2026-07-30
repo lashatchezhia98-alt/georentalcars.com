@@ -65,6 +65,7 @@ const galleryLabels = {
   ru: { view: "Подробнее", details: "Автомобиль", previous: "Предыдущее фото", next: "Следующее фото", book: "Забронировать" },
   ar: { view: "عرض التفاصيل", details: "تفاصيل السيارة", previous: "الصورة السابقة", next: "الصورة التالية", book: "احجز السيارة" },
 };
+const sendingLabels = { ka: "იგზავნება…", en: "Sending…", ru: "Отправляется…", ar: "جارٍ الإرسال…" };
 
 function dateDays(start: string, end: string) {
   if (!start || !end) return 0;
@@ -110,6 +111,8 @@ export default function RentalExperience({
   const [returnId, setReturnId] = useState(pickupLocations[0]?.id || "office-tbilisi");
   const [sent, setSent] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [requestToken, setRequestToken] = useState("");
   const t = messages[locale];
   const activeContent = content?.[locale];
   const publicCopy = activeContent ? {
@@ -157,7 +160,11 @@ export default function RentalExperience({
     };
   }, [bookingOpen, detailsOpen]);
 
-  function beginBooking(car = selectedCar) { setSelectedCar(car); setSent(false); setSubmitError(""); setBookingOpen(true); }
+  function beginBooking(car = selectedCar) {
+    setSelectedCar(car); setSent(false); setSubmitError(""); setSubmitting(false);
+    setRequestToken(window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`);
+    setBookingOpen(true);
+  }
   function viewCar(car: Car) { setSelectedCar(car); setGalleryIndex(0); setDetailsOpen(true); }
   function changeStartDate(value: string) {
     setStart(value);
@@ -165,7 +172,8 @@ export default function RentalExperience({
   }
   async function submitBooking(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!days || hasConflict) return;
+    if (!days || hasConflict || submitting) return;
+    setSubmitting(true);
     setSubmitError("");
     const form = new FormData(event.currentTarget);
     const response = await fetch("/api/bookings", {
@@ -174,7 +182,10 @@ export default function RentalExperience({
     });
     const result = await response.json().catch(() => ({}));
     if (response.ok) setSent(true);
-    else setSubmitError(result.error || "Booking request could not be sent.");
+    else {
+      setSubmitError(result.error || "Booking request could not be sent.");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -329,11 +340,11 @@ export default function RentalExperience({
               <label>{identityLabels[locale].returnLocation}<select required name="returnLocation" value={returnId} onChange={(event) => setReturnId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></label>
               <label className="full">{t.booking.promo}<input name="promoCode" value={promo} onChange={(e) => setPromo(e.target.value)} autoComplete="off" /></label>
             </div>
-            <input type="hidden" name="carId" value={selectedCar.id} /><input type="hidden" name="language" value={locale} />
+            <input type="hidden" name="requestToken" value={requestToken} /><input type="hidden" name="carId" value={selectedCar.id} /><input type="hidden" name="language" value={locale} />
             {hasConflict && <p className="error">{t.booking.conflict}</p>}
             {submitError && <p className="error">{submitError}</p>}
             <div className="summary"><div><span>{days || "—"} {t.booking.days}</span><span>${subtotal.toFixed(2)}</span></div><div><span>{t.booking.discount} ({discount + promoDiscount}%)</span><span>−${(subtotal - rentalTotal).toFixed(2)}</span></div><div><span>{locale === "ka" ? "მიწოდების საფასური" : "Pickup fee"}</span><span>{pickupFee ? `+$${pickupFee.toFixed(2)}` : locale === "ka" ? "უფასო" : "Free"}</span></div><div><span>{locale === "ka" ? "დაბრუნების საფასური" : "Return fee"}</span><span>{returnFee ? `+$${returnFee.toFixed(2)}` : locale === "ka" ? "უფასო" : "Free"}</span></div><div className="total"><strong>{t.booking.total}</strong><strong>${total.toFixed(2)}</strong></div></div>
-            <button className="button full-button" disabled={!days || hasConflict}>{t.booking.submit} ↗</button>
+            <button className="button full-button" disabled={!days || hasConflict || submitting}>{submitting?sendingLabels[locale]:`${t.booking.submit} ↗`}</button>
           </form>}
         </section>
       </div>}

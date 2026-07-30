@@ -35,6 +35,7 @@ export default function AdminDashboard(props: {
   const [promoCodes,setPromoCodes]=useState(props.promoCodes);
   const [contact,setContact]=useState(props.contact);
   const [message,setMessage]=useState("");
+  const [bookingActionId,setBookingActionId]=useState("");
   const patch = async (url:string, body:unknown, success:string) => {
     setMessage("ინახება…");
     const response=await fetch(url,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
@@ -42,8 +43,17 @@ export default function AdminDashboard(props: {
     setMessage(response.ok?success:(data.error||"შენახვა ვერ მოხერხდა."));
   };
   const updateBooking=async(id:string,status:"CONFIRMED"|"REJECTED")=>{
-    const response=await fetch(`/api/admin/bookings/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});
-    if(response.ok)setBookings(rows=>rows.map(row=>row.id===id?{...row,status}:row));
+    if(bookingActionId)return;
+    setBookingActionId(id);
+    setMessage(status==="CONFIRMED"?"ჯავშანი დასტურდება და კლიენტს იმეილი ეგზავნება…":"ჯავშანი უარყოფილია და კლიენტს იმეილი ეგზავნება…");
+    try{
+      const response=await fetch(`/api/admin/bookings/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});
+      const data=await response.json().catch(()=>({}));
+      if(data.status)setBookings(rows=>rows.map(row=>row.id===id?{...row,status:data.status}:row));
+      setMessage(response.ok
+        ? data.duplicate?"სტატუსი უკვე დაფიქსირებული იყო — იმეილი მეორედ არ გაგზავნილა.":`სტატუსი შეიცვალა და კლიენტს იმეილი გაეგზავნა.`
+        : data.error||"სტატუსის შეცვლა ვერ მოხერხდა.");
+    }finally{setBookingActionId("");}
   };
   const addCar=()=>{
     setCars(rows=>[...rows,{id:`car-${Date.now()}`,name:"ახალი ავტომობილი",categoryId:categories[0]?.id||"",description:"",dailyPrice:0,engineSpecification:"2.0L",seatCount:5,fuelType:"PETROL",transmission:"AUTOMATIC",isAvailable:true,photos:[]}]);
@@ -111,8 +121,8 @@ export default function AdminDashboard(props: {
     <section className="admin-main">
       <header><div><small>ადმინისტრირების პანელი</small><h1>{section}</h1></div><div className="admin-account"><span>{props.email}</span><button onClick={()=>signOut({callbackUrl:"/admin/login"})}>გასვლა</button></div></header>
       {message&&<p className="admin-message">{message}</p>}
-      {section==="მთავარი"&&<><div className="stat-grid"><article><span>ყველა ჯავშანი</span><strong>{props.stats.total}</strong><small>სულ მიღებული მოთხოვნა</small></article><article><span>მოლოდინში</span><strong>{props.stats.pending}</strong><small>საჭიროებს რეაგირებას</small></article><article><span>დადასტურებული / უარყოფილი</span><strong>{props.stats.confirmed} / {props.stats.rejected}</strong><small>მიმდინარე სტატუსები</small></article><article><span>ხელმისაწვდომი მანქანები</span><strong>{props.stats.availableCars}</strong><small>აქტიური ავტომობილები</small></article></div><BookingsTable bookings={bookings.slice(0,8)} onStatus={updateBooking}/></>}
-      {section==="ჯავშნები"&&<BookingsTable bookings={bookings} onStatus={updateBooking}/>}
+      {section==="მთავარი"&&<><div className="stat-grid"><article><span>ყველა ჯავშანი</span><strong>{props.stats.total}</strong><small>სულ მიღებული მოთხოვნა</small></article><article><span>მოლოდინში</span><strong>{props.stats.pending}</strong><small>საჭიროებს რეაგირებას</small></article><article><span>დადასტურებული / უარყოფილი</span><strong>{props.stats.confirmed} / {props.stats.rejected}</strong><small>მიმდინარე სტატუსები</small></article><article><span>ხელმისაწვდომი მანქანები</span><strong>{props.stats.availableCars}</strong><small>აქტიური ავტომობილები</small></article></div><BookingsTable bookings={bookings.slice(0,8)} onStatus={updateBooking} busyId={bookingActionId}/></>}
+      {section==="ჯავშნები"&&<BookingsTable bookings={bookings} onStatus={updateBooking} busyId={bookingActionId}/>}
       {section==="საიტის ტექსტები"&&<Panel title="საიტის ტექსტები — ყველა ენა"><div className="content-language-tabs">{([["en","English"],["ka","ქართული"],["ru","Русский"],["ar","العربية"]] as [ContentLocale,string][]).map(([code,label])=><button type="button" className={contentLocale===code?"active":""} key={code} onClick={()=>setContentLocale(code)}>{label}</button>)}</div><p className="content-language-note">თითოეული ენის ტექსტი დამოუკიდებლად იწერება და ავტომატურად არ ითარგმნება.</p><form className="content-form" dir={contentLocale==="ar"?"rtl":"ltr"} onSubmit={e=>{e.preventDefault();patch("/api/admin/content",{locale:contentLocale,content:content[contentLocale]},`${contentLocale.toUpperCase()} ტექსტები შენახულია.`)}}>
         {([
           ["heroEyebrow","მთავარი — ზედა პატარა ტექსტი"],["heroTitle","მთავარი სათაური"],["heroAccent","იასამნისფერი სათაური"],["heroCopy","მთავარი აღწერა"],
@@ -151,4 +161,4 @@ export default function AdminDashboard(props: {
   </main>;
 }
 function Panel({title,button,onButton,children}:{title:string;button?:string;onButton?:()=>void;children:React.ReactNode}){return <section className="admin-panel"><div className="panel-head"><h2>{title}</h2>{button&&<button type="button" className="button compact" onClick={onButton}>{button}</button>}</div>{children}</section>}
-function BookingsTable({bookings,onStatus}:{bookings:AdminBooking[];onStatus:(id:string,status:"CONFIRMED"|"REJECTED")=>void}){return <section className="admin-panel"><div className="panel-head"><div><small>მიმდინარე ოპერაციები</small><h2>ბოლო ჯავშნები</h2></div></div><div className="table-wrap"><table><thead><tr><th>ჯავშანი</th><th>მომხმარებელი</th><th>მანქანა</th><th>თარიღები</th><th>ჯამი</th><th>სტატუსი</th><th>მოქმედება</th></tr></thead><tbody>{bookings.length?bookings.map(row=><tr key={row.id}><td><b>{row.id.slice(-8).toUpperCase()}</b></td><td>{row.customer}</td><td>{row.car}</td><td>{row.dates}</td><td>{row.price}</td><td><span className={`status ${row.status.toLowerCase()}`}>{({PENDING:"მოლოდინში",CONFIRMED:"დადასტურებული",REJECTED:"უარყოფილი"} as Record<string,string>)[row.status]||row.status}</span></td><td><div className="booking-actions"><button onClick={()=>onStatus(row.id,"CONFIRMED")}>დადასტურება</button><button onClick={()=>onStatus(row.id,"REJECTED")}>უარყოფა</button></div></td></tr>):<tr><td colSpan={7}>ჯავშნები ჯერ არ არის.</td></tr>}</tbody></table></div></section>}
+function BookingsTable({bookings,onStatus,busyId}:{bookings:AdminBooking[];onStatus:(id:string,status:"CONFIRMED"|"REJECTED")=>void;busyId:string}){return <section className="admin-panel"><div className="panel-head"><div><small>მიმდინარე ოპერაციები</small><h2>ბოლო ჯავშნები</h2></div></div><div className="table-wrap"><table><thead><tr><th>ჯავშანი</th><th>მომხმარებელი</th><th>მანქანა</th><th>თარიღები</th><th>ჯამი</th><th>სტატუსი</th><th>მოქმედება</th></tr></thead><tbody>{bookings.length?bookings.map(row=><tr key={row.id}><td><b>{row.id.slice(-8).toUpperCase()}</b></td><td>{row.customer}</td><td>{row.car}</td><td>{row.dates}</td><td>{row.price}</td><td><span className={`status ${row.status.toLowerCase()}`}>{({PENDING:"მოლოდინში",CONFIRMED:"დადასტურებული",REJECTED:"უარყოფილი"} as Record<string,string>)[row.status]||row.status}</span></td><td><div className="booking-actions"><button disabled={Boolean(busyId)} onClick={()=>onStatus(row.id,"CONFIRMED")}>{busyId===row.id?"იგზავნება…":"დადასტურება"}</button><button disabled={Boolean(busyId)} onClick={()=>onStatus(row.id,"REJECTED")}>{busyId===row.id?"იგზავნება…":"უარყოფა"}</button></div></td></tr>):<tr><td colSpan={7}>ჯავშნები ჯერ არ არის.</td></tr>}</tbody></table></div></section>}

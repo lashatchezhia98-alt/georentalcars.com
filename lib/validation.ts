@@ -1,5 +1,6 @@
 import { z } from "zod";
 export const bookingSchema = z.object({
+  requestToken: z.uuid(),
   firstName: z.string().trim().min(2).max(60),
   lastName: z.string().trim().min(2).max(60),
   phone: z.string().trim().regex(/^\+?[0-9 ()-]{7,22}$/),
