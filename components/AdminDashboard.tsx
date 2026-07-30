@@ -8,7 +8,8 @@ type AdminBooking = { id: string; customer: string; car: string; dates: string; 
 type AdminStats = { total: number; pending: number; confirmed: number; rejected: number; availableCars: number };
 type AdminContent = { heroEyebrow:string;heroTitle:string;heroAccent:string;heroCopy:string;fleetEyebrow:string;fleetTitle:string;fleetCopy:string;contactEyebrow:string;contactTitle:string;contactCopy:string;footerTagline:string };
 type AdminCategory = { id:string;name:string };
-type AdminCar = { id:string;name:string;categoryId:string;description:string;dailyPrice:number;engineSpecification:string;seatCount:number;fuelType:"PETROL"|"DIESEL";transmission:"AUTOMATIC"|"MANUAL";isAvailable:boolean;image:string };
+type AdminCarPhoto = { url:string;publicId:string };
+type AdminCar = { id:string;name:string;categoryId:string;description:string;dailyPrice:number;engineSpecification:string;seatCount:number;fuelType:"PETROL"|"DIESEL";transmission:"AUTOMATIC"|"MANUAL";isAvailable:boolean;photos:AdminCarPhoto[] };
 type AdminContact = { address:string;googleMapsUrl:string;phone:string;whatsapp:string };
 
 const sections = [
@@ -32,13 +33,29 @@ export default function AdminDashboard(props: {
   const patch = async (url:string, body:unknown, success:string) => {
     setMessage("ინახება…");
     const response=await fetch(url,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-    setMessage(response.ok?success:"შენახვა ვერ მოხერხდა.");
+    const data=await response.json().catch(()=>({}));
+    setMessage(response.ok?success:(data.error||"შენახვა ვერ მოხერხდა."));
   };
   const updateBooking=async(id:string,status:"CONFIRMED"|"REJECTED")=>{
     const response=await fetch(`/api/admin/bookings/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});
     if(response.ok)setBookings(rows=>rows.map(row=>row.id===id?{...row,status}:row));
   };
-  const addCar=()=>setCars(rows=>[...rows,{id:`car-${Date.now()}`,name:"ახალი ავტომობილი",categoryId:categories[0]?.id||"",description:"",dailyPrice:0,engineSpecification:"2.0L",seatCount:5,fuelType:"PETROL",transmission:"AUTOMATIC",isAvailable:true,image:"https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=85"}]);
+  const addCar=()=>{
+    setCars(rows=>[...rows,{id:`car-${Date.now()}`,name:"ახალი ავტომობილი",categoryId:categories[0]?.id||"",description:"",dailyPrice:0,engineSpecification:"2.0L",seatCount:5,fuelType:"PETROL",transmission:"AUTOMATIC",isAvailable:true,photos:[]}]);
+    setMessage("ახალი ავტომობილის ფორმა დამატებულია — შეავსეთ მონაცემები და ატვირთეთ 1-დან 6-მდე ფოტო.");
+  };
+  const uploadCarPhotos=async(index:number,files:FileList|null)=>{
+    if(!files?.length)return;
+    if(files.length>6){setMessage("ერთ მანქანაზე მაქსიმუმ 6 ფოტოს ატვირთვა შეიძლება.");return;}
+    setMessage("ფოტოები იტვირთება…");
+    const form=new FormData();
+    Array.from(files).forEach(file=>form.append("photos",file));
+    const response=await fetch("/api/admin/cars",{method:"POST",body:form});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok){setMessage(data.error||"ფოტოების ატვირთვა ვერ მოხერხდა.");return;}
+    setCars(rows=>rows.map((car,i)=>i===index?{...car,photos:data.photos}:car));
+    setMessage(`${data.photos.length} ფოტო აიტვირთა. ახლა დააჭირეთ „ავტომობილების შენახვას“.`);
+  };
   return <main className="admin-shell">
     <aside>
       <a className="brand admin-brand" href="/"><BrandMark/><span className="brand-name">Geo<span>Rental</span>Cars</span></a>
@@ -56,7 +73,11 @@ export default function AdminDashboard(props: {
           ["fleetEyebrow","ავტომობილები — პატარა ტექსტი"],["fleetTitle","ავტომობილების სათაური"],["fleetCopy","ავტომობილების აღწერა"],
           ["contactEyebrow","კონტაქტი — პატარა ტექსტი"],["contactTitle","კონტაქტის სათაური"],["contactCopy","კონტაქტის აღწერა"],["footerTagline","Footer-ის ტექსტი"],
         ] as [keyof AdminContent,string][]).map(([key,label])=><label key={key}>{label}{key.endsWith("Copy")?<textarea value={content[key]} onChange={e=>setContent({...content,[key]:e.target.value})}/>:<input value={content[key]} onChange={e=>setContent({...content,[key]:e.target.value})}/>}</label>)}<button className="button">ტექსტების შენახვა</button></form></Panel>}
-      {section==="ავტომობილები"&&<Panel title="ავტომობილების მართვა" button="+ ავტომობილის დამატება" onButton={addCar}><div className="car-editor">{cars.map((car,index)=><article key={car.id}><img src={car.image} alt=""/><div className="editor-grid">
+      {section==="ავტომობილები"&&<Panel title="ავტომობილების მართვა" button="+ ავტომობილის დამატება" onButton={addCar}><div className="car-editor">{cars.map((car,index)=><article key={car.id}><div className="admin-photo-manager">
+        <div className="admin-photo-grid">{car.photos.map((photo,photoIndex)=><div key={`${photo.publicId}-${photoIndex}`}><img src={photo.url} alt={`${car.name} ${photoIndex+1}`}/><button type="button" onClick={()=>setCars(rows=>rows.map((item,i)=>i===index?{...item,photos:item.photos.filter((_,p)=>p!==photoIndex)}:item))}>×</button></div>)}</div>
+        <label className="photo-upload">1–6 ფოტოს ატვირთვა<input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={e=>uploadCarPhotos(index,e.target.files)}/></label>
+        <small>{car.photos.length}/6 ფოტო</small>
+      </div><div className="editor-grid">
         <label>დასახელება<input value={car.name} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,name:e.target.value}:x))}/></label>
         <label>კატეგორია<select value={car.categoryId} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,categoryId:e.target.value}:x))}>{categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
         <label>ფასი დღეში ($)<input type="number" value={car.dailyPrice} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,dailyPrice:Number(e.target.value)}:x))}/></label>
@@ -64,7 +85,6 @@ export default function AdminDashboard(props: {
         <label>ადგილები<input type="number" value={car.seatCount} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,seatCount:Number(e.target.value)}:x))}/></label>
         <label>საწვავი<select value={car.fuelType} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,fuelType:e.target.value as "PETROL"|"DIESEL"}:x))}><option value="PETROL">ბენზინი / ჰიბრიდი</option><option value="DIESEL">დიზელი</option></select></label>
         <label>ტრანსმისია<select value={car.transmission} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,transmission:e.target.value as "AUTOMATIC"|"MANUAL"}:x))}><option value="AUTOMATIC">ავტომატიკა</option><option value="MANUAL">მექანიკა</option></select></label>
-        <label className="wide">ფოტოს URL<input value={car.image} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,image:e.target.value}:x))}/></label>
         <label className="wide">აღწერა<textarea value={car.description} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,description:e.target.value}:x))}/></label>
         <label className="toggle"><input type="checkbox" checked={car.isAvailable} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,isAvailable:e.target.checked}:x))}/> ხელმისაწვდომია</label>
       </div></article>)}</div><button className="button save-list" onClick={()=>patch("/api/admin/cars",{cars},"ავტომობილები შენახულია.")}>ავტომობილების შენახვა</button></Panel>}

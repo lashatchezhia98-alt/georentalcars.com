@@ -11,7 +11,7 @@ import ar from "@/messages/ar.json";
 type Locale = "ka" | "en" | "ru" | "ar";
 type Car = {
   id: string; name: string; category: string; price: number; rating: number;
-  engine: string; seats: number; fuel: string; transmission: string; image: string;
+  engine: string; seats: number; fuel: string; transmission: string; image: string; photos?: string[];
 };
 type PickupLocation = {
   id: string; nameKa: string; nameEn: string; nameRu: string; nameAr: string; fee: number;
@@ -57,6 +57,12 @@ const identityLabels = {
   ru: { birthDate: "Дата рождения", passportNumber: "Номер паспорта", driverLicenseNumber: "Номер водительских прав", driverLicenseExpiry: "Срок действия водительских прав", returnLocation: "Место возврата", chooseCar: "Выберите автомобиль" },
   ar: { birthDate: "تاريخ الميلاد", passportNumber: "رقم جواز السفر", driverLicenseNumber: "رقم رخصة القيادة", driverLicenseExpiry: "تاريخ انتهاء رخصة القيادة", returnLocation: "موقع الإرجاع", chooseCar: "اختر سيارة" },
 };
+const galleryLabels = {
+  ka: { view: "დათვალიერება", details: "ავტომობილის დეტალები", previous: "წინა ფოტო", next: "შემდეგი ფოტო", book: "დაჯავშნა" },
+  en: { view: "View details", details: "Vehicle details", previous: "Previous photo", next: "Next photo", book: "Book this car" },
+  ru: { view: "Подробнее", details: "Автомобиль", previous: "Предыдущее фото", next: "Следующее фото", book: "Забронировать" },
+  ar: { view: "عرض التفاصيل", details: "تفاصيل السيارة", previous: "الصورة السابقة", next: "الصورة التالية", book: "احجز السيارة" },
+};
 
 function dateDays(start: string, end: string) {
   if (!start || !end) return 0;
@@ -89,6 +95,8 @@ export default function RentalExperience({
   const [category, setCategory] = useState("All");
   const [selectedCar, setSelectedCar] = useState<Car>(cars[0] || fallbackCars[0]);
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [promo, setPromo] = useState("");
@@ -119,10 +127,11 @@ export default function RentalExperience({
   const adultCutoff = new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().slice(0, 10);
 
   useEffect(() => {
-    document.body.style.overflow = bookingOpen ? "hidden" : "";
+    document.body.style.overflow = bookingOpen || detailsOpen ? "hidden" : "";
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setBookingOpen(false);
+        setDetailsOpen(false);
         setMenu(false);
       }
     };
@@ -131,9 +140,10 @@ export default function RentalExperience({
       document.body.style.overflow = "";
       window.removeEventListener("keydown", closeOnEscape);
     };
-  }, [bookingOpen]);
+  }, [bookingOpen, detailsOpen]);
 
   function beginBooking(car = selectedCar) { setSelectedCar(car); setSent(false); setBookingOpen(true); }
+  function viewCar(car: Car) { setSelectedCar(car); setGalleryIndex(0); setDetailsOpen(true); }
   function changeStartDate(value: string) {
     setStart(value);
     if (end && end < value) setEnd("");
@@ -206,10 +216,11 @@ export default function RentalExperience({
         <div className="car-grid">
           {visibleCars.map((car, index) => (
             <article className="car-card" key={car.id}>
-              <div className="car-image"><img src={car.image} alt={car.name} /><span className="available">● {t.cars.available}</span>{index === 0 && <span className="popular">{t.cars.popular}</span>}</div>
+              <button className="car-image car-image-button" onClick={() => viewCar(car)} aria-label={`${galleryLabels[locale].view}: ${car.name}`}><img src={car.image} alt={car.name} /><span className="available">● {t.cars.available}</span>{index === 0 && <span className="popular">{t.cars.popular}</span>}</button>
               <div className="car-body">
                 <div className="car-title"><div><small>{car.category}</small><h3>{car.name}</h3></div></div>
                 <div className="specs"><span>⚙ {car.transmission}</span><span>◉ {car.fuel}</span><span>♙ {car.seats} {t.cars.seats}</span></div>
+                <button className="view-details" onClick={() => viewCar(car)}>{galleryLabels[locale].view}</button>
                 <div className="price"><div><strong>${car.price}</strong><span> / {t.cars.day}</span></div><button onClick={() => beginBooking(car)}>{t.cars.book} ↗</button></div>
               </div>
             </article>
@@ -232,6 +243,28 @@ export default function RentalExperience({
       </section>
 
       <footer><a className="brand" href="#home"><BrandMark /><span className="brand-name">Geo<span>Rental</span>Cars</span></a><p>© 2026 GeoRentalCars.com</p><span>{content?.footerTagline || "Made for Georgia"}</span></footer>
+
+      {detailsOpen && <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setDetailsOpen(false)}>
+        <section className="car-details-modal" role="dialog" aria-modal="true" aria-labelledby="car-details-title">
+          <button className="close" onClick={() => setDetailsOpen(false)} aria-label="Close">×</button>
+          <div className="gallery-main">
+            <img src={(selectedCar.photos?.length ? selectedCar.photos : [selectedCar.image])[galleryIndex]} alt={`${selectedCar.name} — ${galleryIndex + 1}`} />
+            {(selectedCar.photos?.length || 1) > 1 && <>
+              <button className="gallery-arrow previous" aria-label={galleryLabels[locale].previous} onClick={() => setGalleryIndex(index => (index - 1 + (selectedCar.photos?.length || 1)) % (selectedCar.photos?.length || 1))}>‹</button>
+              <button className="gallery-arrow next" aria-label={galleryLabels[locale].next} onClick={() => setGalleryIndex(index => (index + 1) % (selectedCar.photos?.length || 1))}>›</button>
+            </>}
+          </div>
+          <div className="gallery-thumbnails">
+            {(selectedCar.photos?.length ? selectedCar.photos : [selectedCar.image]).map((photo,index)=><button key={`${photo}-${index}`} className={galleryIndex===index?"active":""} onClick={()=>setGalleryIndex(index)}><img src={photo} alt={`${selectedCar.name} ${index+1}`}/></button>)}
+          </div>
+          <div className="car-detail-copy">
+            <span className="eyebrow">{galleryLabels[locale].details}</span><h2 id="car-details-title">{selectedCar.name}</h2>
+            <p>{selectedCar.category}</p>
+            <div className="specs"><span>⚙ {selectedCar.transmission}</span><span>◉ {selectedCar.fuel}</span><span>♙ {selectedCar.seats} {t.cars.seats}</span><span>{selectedCar.engine}</span></div>
+            <div className="detail-action"><strong>${selectedCar.price} <small>/ {t.cars.day}</small></strong><button className="button" onClick={()=>{setDetailsOpen(false);beginBooking(selectedCar)}}>{galleryLabels[locale].book} ↗</button></div>
+          </div>
+        </section>
+      </div>}
 
       {bookingOpen && <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setBookingOpen(false)}>
         <section className="booking-modal" role="dialog" aria-modal="true" aria-labelledby="booking-title">

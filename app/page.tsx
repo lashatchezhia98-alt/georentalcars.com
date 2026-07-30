@@ -11,7 +11,7 @@ export default async function Home() {
       : [],
     prisma.car.findMany({
       where: { isAvailable: true },
-      include: { category: true, photos: { orderBy: { sortOrder: "asc" }, take: 1 } },
+      include: { category: true, photos: { orderBy: { sortOrder: "asc" }, take: 6 } },
       orderBy: { createdAt: "asc" },
     }).catch(() => []),
     prisma.carCategory.findMany({ orderBy: { name: "asc" } }).catch(() => []),
@@ -43,6 +43,7 @@ export default async function Home() {
       fuel: car.fuelType === "PETROL" ? "Petrol" : "Diesel",
       transmission: car.transmission === "AUTOMATIC" ? "Automatic" : "Manual",
       image: car.photos[0]?.secureUrl || "/hero-wrangler-climb.png",
+      photos: car.photos.map((photo) => photo.secureUrl),
     }))}
     categories={["All", ...categories.map((category) => category.name)]}
     contact={{

@@ -15,7 +15,7 @@ export default async function AdminPage() {
     prisma.booking.findMany({ include: { car: true }, orderBy: { createdAt: "desc" }, take: 100 }).catch(() => []),
     prisma.booking.groupBy({ by: ["status"], _count: { _all: true } }).catch(() => []),
     prisma.car.count({ where: { isAvailable: true } }).catch(() => 0),
-    prisma.car.findMany({ include: { photos: { orderBy: { sortOrder: "asc" }, take: 1 } }, orderBy: { createdAt: "asc" } }).catch(() => []),
+    prisma.car.findMany({ include: { photos: { orderBy: { sortOrder: "asc" }, take: 6 } }, orderBy: { createdAt: "asc" } }).catch(() => []),
     prisma.carCategory.findMany({ orderBy: { name: "asc" } }).catch(() => []),
     prisma.contactSettings.findUnique({ where: { id: "default" }, include: { numbers: true } }).catch(() => null),
   ]);
@@ -53,7 +53,7 @@ export default async function AdminPage() {
       id: car.id, name: car.name, categoryId: car.categoryId, description: car.description,
       dailyPrice: Number(car.dailyPrice), engineSpecification: car.engineSpecification, seatCount: car.seatCount,
       fuelType: car.fuelType, transmission: car.transmission, isAvailable: car.isAvailable,
-      image: car.photos[0]?.secureUrl || "",
+      photos: car.photos.map((photo) => ({ url: photo.secureUrl, publicId: photo.cloudinaryPublicId })),
     }))}
     categories={categories.map((category) => ({ id: category.id, name: category.name }))}
     contact={{
