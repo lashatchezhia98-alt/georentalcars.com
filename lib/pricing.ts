@@ -5,7 +5,8 @@ export function rentalDays(start: Date, end: Date) {
 }
 export function durationDiscount(days: number, rule = defaultDiscount) {
   if (days < rule.startDay) return 0;
-  return Math.min(rule.maxPercent, rule.basePercent + (days - rule.startDay) * rule.incrementPerDay);
+  const discountDay = Math.min(days, 30);
+  return Math.min(rule.maxPercent, rule.basePercent + (discountDay - rule.startDay) * rule.incrementPerDay);
 }
 export function calculatePrice(days: number, dailyPrice: number, durationPercent: number, promoPercent = 0) {
   const subtotal = days * dailyPrice;

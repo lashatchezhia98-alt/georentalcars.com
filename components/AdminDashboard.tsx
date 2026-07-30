@@ -6,7 +6,7 @@ import { signOut } from "next-auth/react";
 type AdminPickupLocation = { id:string;nameKa:string;nameEn:string;nameRu:string;nameAr:string;fee:number;isActive:boolean };
 type AdminBooking = { id: string; customer: string; car: string; dates: string; status: string; price: string };
 type AdminStats = { total: number; pending: number; confirmed: number; rejected: number; availableCars: number };
-type AdminContent = { heroEyebrow:string;heroTitle:string;heroAccent:string;heroCopy:string;fleetEyebrow:string;fleetTitle:string;fleetCopy:string;contactEyebrow:string;contactTitle:string;contactCopy:string;footerTagline:string };
+type AdminContent = { heroEyebrow:string;heroTitle:string;heroAccent:string;heroCopy:string;fleetEyebrow:string;fleetTitle:string;fleetCopy:string;aboutEyebrow:string;aboutTitle:string;aboutCopy:string;contactEyebrow:string;contactTitle:string;contactCopy:string;footerTagline:string };
 type ContentLocale = "en"|"ka"|"ru"|"ar";
 type LocalizedAdminContent = Record<ContentLocale,AdminContent>;
 type AdminCategory = { id:string;name:string };
@@ -117,6 +117,7 @@ export default function AdminDashboard(props: {
         {([
           ["heroEyebrow","მთავარი — ზედა პატარა ტექსტი"],["heroTitle","მთავარი სათაური"],["heroAccent","იასამნისფერი სათაური"],["heroCopy","მთავარი აღწერა"],
           ["fleetEyebrow","ავტომობილები — პატარა ტექსტი"],["fleetTitle","ავტომობილების სათაური"],["fleetCopy","ავტომობილების აღწერა"],
+          ["aboutEyebrow","About — პატარა ტექსტი"],["aboutTitle","About — სათაური"],["aboutCopy","About — აღწერა"],
           ["contactEyebrow","კონტაქტი — პატარა ტექსტი"],["contactTitle","კონტაქტის სათაური"],["contactCopy","კონტაქტის აღწერა"],["footerTagline","Footer-ის ტექსტი"],
         ] as [keyof AdminContent,string][]).map(([key,label])=><label key={key}>{label}{key.endsWith("Copy")?<textarea value={content[contentLocale][key]} onChange={e=>setContent({...content,[contentLocale]:{...content[contentLocale],[key]:e.target.value}})}/>:<input value={content[contentLocale][key]} onChange={e=>setContent({...content,[contentLocale]:{...content[contentLocale],[key]:e.target.value}})}/>}</label>)}<button className="button">ყველა ენის ტექსტების შენახვა</button></form></Panel>}
       {section==="ავტომობილები"&&<Panel title="ავტომობილების მართვა" button="+ ავტომობილის დამატება" onButton={addCar}><div className="car-editor">{cars.map((car,index)=><article key={car.id}><div className="admin-photo-manager">

@@ -22,6 +22,7 @@ type PublicContact = {
 type PublicContent = {
   heroEyebrow: string; heroTitle: string; heroAccent: string; heroCopy: string;
   fleetEyebrow: string; fleetTitle: string; fleetCopy: string;
+  aboutEyebrow: string; aboutTitle: string; aboutCopy: string;
   contactEyebrow: string; contactTitle: string; contactCopy: string; footerTagline: string;
 };
 type LocalizedPublicContent = Record<Locale,PublicContent>;
@@ -69,7 +70,11 @@ function dateDays(start: string, end: string) {
   if (!start || !end) return 0;
   return Math.max(0, Math.ceil((new Date(end).getTime() - new Date(start).getTime()) / 86400000) + 1);
 }
-function durationDiscount(days: number) { return days < 6 ? 0 : Math.min(30, days); }
+function durationDiscount(days: number) {
+  if (days < 6) return 0;
+  const discountDay = Math.min(days, 30);
+  return discountDay;
+}
 
 export default function RentalExperience({
   heroImageUrl = "/hero-wrangler-climb.png",
@@ -110,8 +115,9 @@ export default function RentalExperience({
   const publicCopy = activeContent ? {
     hero: { ...t.hero, eyebrow: activeContent.heroEyebrow, title: activeContent.heroTitle, accent: activeContent.heroAccent, copy: activeContent.heroCopy },
     cars: { ...t.cars, eyebrow: activeContent.fleetEyebrow, title: activeContent.fleetTitle, copy: activeContent.fleetCopy },
+    about: { eyebrow: activeContent.aboutEyebrow, title: activeContent.aboutTitle, copy: activeContent.aboutCopy },
     contact: { ...t.contact, eyebrow: activeContent.contactEyebrow, title: activeContent.contactTitle, copy: activeContent.contactCopy },
-  } : t;
+  } : { ...t, about: { eyebrow: t.how.eyebrow, title: t.nav.about, copy: t.how.copy } };
   const rtl = locale === "ar";
   const visibleCars = category === "All" ? cars : cars.filter((car) => car.category === category);
   const days = dateDays(start, end);
@@ -174,7 +180,7 @@ export default function RentalExperience({
           <span className="brand-name">Geo<span>Rental</span>Cars</span>
         </a>
         <nav className={menu ? "nav open" : "nav"} aria-label="Primary navigation">
-          <a href="#home" onClick={() => setMenu(false)}>{t.nav.home}</a><a href="#cars" onClick={() => setMenu(false)}>{t.nav.cars}</a>
+          <a href="#home" onClick={() => setMenu(false)}>{t.nav.home}</a><a href="#cars" onClick={() => setMenu(false)}>{t.nav.cars}</a><a href="#about" onClick={() => setMenu(false)}>{t.nav.about}</a>
           <a href="#contact" onClick={() => setMenu(false)}>{t.nav.contact}</a>
         </nav>
         <div className="header-actions">
@@ -233,6 +239,15 @@ export default function RentalExperience({
             </article>
           ))}
         </div>
+      </section>
+
+      <section id="about" className="about-section section">
+        <div className="about-copy">
+          <span className="eyebrow">{publicCopy.about.eyebrow}</span>
+          <h2>{publicCopy.about.title}</h2>
+          <p>{publicCopy.about.copy}</p>
+        </div>
+        <div className="about-road" aria-hidden="true"><span>GEORGIA</span></div>
       </section>
 
       <section id="contact" className="contact section">
