@@ -54,10 +54,10 @@ const fallbackPickupLocations: PickupLocation[] = [
   { id: "batumi-airport", nameKa: "ბათუმის საერთაშორისო აეროპორტი", nameEn: "Batumi International Airport", nameRu: "Аэропорт Батуми", nameAr: "مطار باتومي الدولي", fee: 120 },
 ];
 const identityLabels = {
-  ka: { birthDate: "დაბადების თარიღი", flightNumber: "ფრენის ნომერი — ნებაყოფლობითი", passportNumber: "პასპორტის ნომერი", driverLicenseNumber: "მართვის მოწმობის ნომერი", driverLicenseExpiry: "მართვის მოწმობის ვადა", returnLocation: "დაბრუნების ადგილი", chooseCar: "აირჩიეთ ავტომობილი" },
-  en: { birthDate: "Date of birth", flightNumber: "Flight number — optional", passportNumber: "Passport number", driverLicenseNumber: "Driver’s license number", driverLicenseExpiry: "Driver’s license expiry date", returnLocation: "Return location", chooseCar: "Choose a car" },
-  ru: { birthDate: "Дата рождения", flightNumber: "Номер рейса — необязательно", passportNumber: "Номер паспорта", driverLicenseNumber: "Номер водительских прав", driverLicenseExpiry: "Срок действия водительских прав", returnLocation: "Место возврата", chooseCar: "Выберите автомобиль" },
-  ar: { birthDate: "تاريخ الميلاد", flightNumber: "رقم الرحلة — اختياري", passportNumber: "رقم جواز السفر", driverLicenseNumber: "رقم رخصة القيادة", driverLicenseExpiry: "تاريخ انتهاء رخصة القيادة", returnLocation: "موقع الإرجاع", chooseCar: "اختر سيارة" },
+  ka: { birthDate: "დაბადების თარიღი", flightNumber: "ფრენის ნომერი — ნებაყოფლობითი", passportNumber: "პასპორტის ნომერი — ნებაყოფლობითი", driverLicenseNumber: "მართვის მოწმობის ნომერი — ნებაყოფლობითი", driverLicenseExpiry: "მართვის მოწმობის ვადა — ნებაყოფლობითი", promoCode: "პრომო კოდი — ნებაყოფლობითი", returnLocation: "დაბრუნების ადგილი", chooseCar: "აირჩიეთ ავტომობილი" },
+  en: { birthDate: "Date of birth", flightNumber: "Flight number — optional", passportNumber: "Passport number — optional", driverLicenseNumber: "Driver’s license number — optional", driverLicenseExpiry: "Driver’s license expiry date — optional", promoCode: "Promo code — optional", returnLocation: "Return location", chooseCar: "Choose a car" },
+  ru: { birthDate: "Дата рождения", flightNumber: "Номер рейса — необязательно", passportNumber: "Номер паспорта — необязательно", driverLicenseNumber: "Номер водительских прав — необязательно", driverLicenseExpiry: "Срок действия водительских прав — необязательно", promoCode: "Промокод — необязательно", returnLocation: "Место возврата", chooseCar: "Выберите автомобиль" },
+  ar: { birthDate: "تاريخ الميلاد", flightNumber: "رقم الرحلة — اختياري", passportNumber: "رقم جواز السفر — اختياري", driverLicenseNumber: "رقم رخصة القيادة — اختياري", driverLicenseExpiry: "تاريخ انتهاء رخصة القيادة — اختياري", promoCode: "الرمز الترويجي — اختياري", returnLocation: "موقع الإرجاع", chooseCar: "اختر سيارة" },
 };
 const galleryLabels = {
   ka: { view: "დათვალიერება", details: "ავტომობილის დეტალები", previous: "წინა ფოტო", next: "შემდეგი ფოტო", book: "დაჯავშნა" },
@@ -339,7 +339,7 @@ export default function RentalExperience({
               <label>{t.booking.end}<input required name="endDate" type="date" min={start || today} value={end} onClick={showCalendar} onChange={(e) => setEnd(e.target.value)} /></label>
               <label>{t.booking.pickup}<select required name="pickupLocation" value={pickupId} onChange={(event) => setPickupId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></label>
               <label>{identityLabels[locale].returnLocation}<select required name="returnLocation" value={returnId} onChange={(event) => setReturnId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></label>
-              <label className="full">{t.booking.promo}<input name="promoCode" value={promo} onChange={(e) => setPromo(e.target.value)} autoComplete="off" /></label>
+              <label className="full">{identityLabels[locale].promoCode}<input name="promoCode" value={promo} onChange={(e) => setPromo(e.target.value)} autoComplete="off" /></label>
             </div>
             <input type="hidden" name="requestToken" value={requestToken} /><input type="hidden" name="carId" value={selectedCar.id} /><input type="hidden" name="language" value={locale} />
             {hasConflict && <p className="error">{t.booking.conflict}</p>}
