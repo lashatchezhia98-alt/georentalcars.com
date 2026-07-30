@@ -37,9 +37,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Driver’s license must remain valid through the rental end date" }, { status: 400 });
   }
 
-  const [car, pickup, discountSettings, promo, conflict] = await Promise.all([
+  const [car, pickup, returnLocation, discountSettings, promo, conflict] = await Promise.all([
     prisma.car.findFirst({ where: { id: data.carId, isAvailable: true }, include: { category: true } }),
     prisma.pickupLocation.findFirst({ where: { id: data.pickupLocation, isActive: true } }),
+    prisma.pickupLocation.findFirst({ where: { id: data.returnLocation, isActive: true } }),
     prisma.discountSettings.findUnique({ where: { id: "default" } }),
     data.promoCode
       ? prisma.promoCode.findFirst({ where: { code: data.promoCode.toUpperCase(), isActive: true } })
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
   ]);
   if (!car) return NextResponse.json({ error: "Car not found or unavailable" }, { status: 404 });
   if (!pickup) return NextResponse.json({ error: "Pickup location not found" }, { status: 404 });
+  if (!returnLocation) return NextResponse.json({ error: "Return location not found" }, { status: 404 });
   if (conflict) return NextResponse.json({ error: "This car is unavailable for the selected dates" }, { status: 409 });
   if (data.promoCode && !promo) return NextResponse.json({ error: "Promo code is invalid or inactive" }, { status: 400 });
 
@@ -63,8 +65,9 @@ export async function POST(request: Request) {
   const promoDiscount = promo ? Number(promo.discountPercent) : 0;
   const dailyPrice = Number(car.dailyPrice);
   const pickupFee = Number(pickup.fee);
+  const returnFee = Number(returnLocation.fee);
   const rentalTotal = calculatePrice(days, dailyPrice, rentalDiscount, promoDiscount);
-  const totalPrice = rentalTotal + pickupFee;
+  const totalPrice = rentalTotal + pickupFee + returnFee;
 
   const booking = await prisma.booking.create({
     data: {
@@ -79,6 +82,8 @@ export async function POST(request: Request) {
       customerLanguage: data.language,
       pickupLocation: pickup.id,
       pickupFee,
+      returnLocation: returnLocation.id,
+      returnFee,
       startDate: start,
       endDate: end,
       totalDays: days,
@@ -96,11 +101,23 @@ export async function POST(request: Request) {
     customerName: booking.customerName,
     customerPhone: booking.customerPhone,
     customerEmail: booking.customerEmail,
+    birthDate: data.birthDate,
+    passportNumber: data.passportNumber,
+    driverLicenseNumber: data.driverLicenseNumber,
+    driverLicenseExpiry: data.driverLicenseExpiry,
     carName: car.name,
     carCategory: car.category.name,
+    dailyPrice,
+    totalDays: days,
+    rentalDiscount,
+    promoDiscount,
     startDate: data.startDate,
     endDate: data.endDate,
     pickupLocation: pickup.nameEn,
+    pickupFee,
+    returnLocation: returnLocation.nameEn,
+    returnFee,
+    promoCode: data.promoCode || "—",
     totalPrice,
   }).catch(() => undefined);
 
@@ -109,6 +126,7 @@ export async function POST(request: Request) {
     status: booking.status,
     totalPrice,
     pickupFee,
+    returnFee,
     totalDays: days,
     discountPercent: rentalDiscount,
     promoDiscountPercent: promoDiscount,

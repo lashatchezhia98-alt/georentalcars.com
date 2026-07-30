@@ -13,6 +13,7 @@ export const bookingSchema = z.object({
   startDate: z.iso.date(),
   endDate: z.iso.date(),
   pickupLocation: z.string().trim().min(1).max(80),
+  returnLocation: z.string().trim().min(1).max(80),
   promoCode: z.string().trim().max(30).optional(),
 });
 export const contactNumberSchema = z.object({

@@ -48,10 +48,10 @@ const fallbackPickupLocations: PickupLocation[] = [
   { id: "batumi-airport", nameKa: "ბათუმის საერთაშორისო აეროპორტი", nameEn: "Batumi International Airport", nameRu: "Аэропорт Батуми", nameAr: "مطار باتومي الدولي", fee: 120 },
 ];
 const identityLabels = {
-  ka: { birthDate: "დაბადების თარიღი", passportNumber: "პასპორტის ნომერი", driverLicenseNumber: "მართვის მოწმობის ნომერი", driverLicenseExpiry: "მართვის მოწმობის ვადა" },
-  en: { birthDate: "Date of birth", passportNumber: "Passport number", driverLicenseNumber: "Driver’s license number", driverLicenseExpiry: "Driver’s license expiry date" },
-  ru: { birthDate: "Дата рождения", passportNumber: "Номер паспорта", driverLicenseNumber: "Номер водительских прав", driverLicenseExpiry: "Срок действия водительских прав" },
-  ar: { birthDate: "تاريخ الميلاد", passportNumber: "رقم جواز السفر", driverLicenseNumber: "رقم رخصة القيادة", driverLicenseExpiry: "تاريخ انتهاء رخصة القيادة" },
+  ka: { birthDate: "დაბადების თარიღი", passportNumber: "პასპორტის ნომერი", driverLicenseNumber: "მართვის მოწმობის ნომერი", driverLicenseExpiry: "მართვის მოწმობის ვადა", returnLocation: "დაბრუნების ადგილი" },
+  en: { birthDate: "Date of birth", passportNumber: "Passport number", driverLicenseNumber: "Driver’s license number", driverLicenseExpiry: "Driver’s license expiry date", returnLocation: "Return location" },
+  ru: { birthDate: "Дата рождения", passportNumber: "Номер паспорта", driverLicenseNumber: "Номер водительских прав", driverLicenseExpiry: "Срок действия водительских прав", returnLocation: "Место возврата" },
+  ar: { birthDate: "تاريخ الميلاد", passportNumber: "رقم جواز السفر", driverLicenseNumber: "رقم رخصة القيادة", driverLicenseExpiry: "تاريخ انتهاء رخصة القيادة", returnLocation: "موقع الإرجاع" },
 };
 
 function dateDays(start: string, end: string) {
@@ -87,6 +87,7 @@ export default function RentalExperience({
   const [end, setEnd] = useState("");
   const [promo, setPromo] = useState("");
   const [pickupId, setPickupId] = useState(pickupLocations[0]?.id || "office-tbilisi");
+  const [returnId, setReturnId] = useState(pickupLocations[0]?.id || "office-tbilisi");
   const [sent, setSent] = useState(false);
   const t = messages[locale];
   const rtl = locale === "ar";
@@ -95,10 +96,12 @@ export default function RentalExperience({
   const discount = durationDiscount(days);
   const promoDiscount = promo.trim().toUpperCase() === "GEORGIA10" ? 10 : 0;
   const selectedPickup = pickupLocations.find((location) => location.id === pickupId) || pickupLocations[0];
+  const selectedReturn = pickupLocations.find((location) => location.id === returnId) || pickupLocations[0];
   const pickupFee = selectedPickup?.fee || 0;
+  const returnFee = selectedReturn?.fee || 0;
   const subtotal = days * selectedCar.price;
   const rentalTotal = subtotal * (1 - discount / 100) * (1 - promoDiscount / 100);
-  const total = rentalTotal + pickupFee;
+  const total = rentalTotal + pickupFee + returnFee;
   const pickupName = (location: PickupLocation) => ({ ka: location.nameKa, en: location.nameEn, ru: location.nameRu, ar: location.nameAr })[locale];
   const hasConflict = useMemo(() => {
     if (!start || !end) return false;
@@ -173,6 +176,7 @@ export default function RentalExperience({
         </div>
         <div className="availability-card">
           <div className="pickup-field"><span>{t.booking.pickup}</span><select aria-label={t.booking.pickup} value={pickupId} onChange={(event) => setPickupId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></div>
+          <div className="pickup-field"><span>{identityLabels[locale].returnLocation}</span><select aria-label={identityLabels[locale].returnLocation} value={returnId} onChange={(event) => setReturnId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></div>
           <div><span>{t.booking.start}</span><input aria-label={t.booking.start} type="date" min={today} value={start} onChange={(e) => setStart(e.target.value)} /></div>
           <div><span>{t.booking.end}</span><input aria-label={t.booking.end} type="date" min={start || today} value={end} onChange={(e) => setEnd(e.target.value)} /></div>
           <button className="button" onClick={() => document.querySelector("#cars")?.scrollIntoView()}>{t.booking.search}</button>
@@ -233,12 +237,13 @@ export default function RentalExperience({
               <label>{identityLabels[locale].driverLicenseExpiry}<input required name="driverLicenseExpiry" type="date" min={end || today} /></label>
               <label>{t.booking.start}<input required name="startDate" type="date" min={today} value={start} onChange={(e) => setStart(e.target.value)} /></label>
               <label>{t.booking.end}<input required name="endDate" type="date" min={start || today} value={end} onChange={(e) => setEnd(e.target.value)} /></label>
-              <label className="full">{t.booking.pickup}<select name="pickupLocation" value={pickupId} onChange={(event) => setPickupId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></label>
+              <label>{t.booking.pickup}<select required name="pickupLocation" value={pickupId} onChange={(event) => setPickupId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></label>
+              <label>{identityLabels[locale].returnLocation}<select required name="returnLocation" value={returnId} onChange={(event) => setReturnId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></label>
               <label className="full">{t.booking.promo}<input name="promoCode" value={promo} onChange={(e) => setPromo(e.target.value)} placeholder="GEORGIA10" /></label>
             </div>
             <input type="hidden" name="carId" value={selectedCar.id} /><input type="hidden" name="language" value={locale} />
             {hasConflict && <p className="error">{t.booking.conflict}</p>}
-            <div className="summary"><div><span>{days || "—"} {t.booking.days}</span><span>${subtotal.toFixed(2)}</span></div><div><span>{t.booking.discount} ({discount + promoDiscount}%)</span><span>−${(subtotal - rentalTotal).toFixed(2)}</span></div><div><span>{locale === "ka" ? "მიწოდების საფასური" : "Pickup fee"}</span><span>{pickupFee ? `+$${pickupFee.toFixed(2)}` : locale === "ka" ? "უფასო" : "Free"}</span></div><div className="total"><strong>{t.booking.total}</strong><strong>${total.toFixed(2)}</strong></div></div>
+            <div className="summary"><div><span>{days || "—"} {t.booking.days}</span><span>${subtotal.toFixed(2)}</span></div><div><span>{t.booking.discount} ({discount + promoDiscount}%)</span><span>−${(subtotal - rentalTotal).toFixed(2)}</span></div><div><span>{locale === "ka" ? "მიწოდების საფასური" : "Pickup fee"}</span><span>{pickupFee ? `+$${pickupFee.toFixed(2)}` : locale === "ka" ? "უფასო" : "Free"}</span></div><div><span>{locale === "ka" ? "დაბრუნების საფასური" : "Return fee"}</span><span>{returnFee ? `+$${returnFee.toFixed(2)}` : locale === "ka" ? "უფასო" : "Free"}</span></div><div className="total"><strong>{t.booking.total}</strong><strong>${total.toFixed(2)}</strong></div></div>
             <button className="button full-button" disabled={!days || hasConflict}>{t.booking.submit} ↗</button>
           </form>}
         </section>
