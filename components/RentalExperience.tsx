@@ -137,6 +137,11 @@ export default function RentalExperience({
   const showCalendar = (event: React.MouseEvent<HTMLInputElement>) => event.currentTarget.showPicker?.();
 
   useEffect(() => {
+    const savedLocale = window.localStorage.getItem("georentalcars-locale");
+    if (savedLocale && ["ka", "en", "ru", "ar"].includes(savedLocale)) setLocale(savedLocale as Locale);
+  }, []);
+
+  useEffect(() => {
     document.body.style.overflow = bookingOpen || detailsOpen ? "hidden" : "";
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -186,7 +191,11 @@ export default function RentalExperience({
         <div className="header-actions">
           <label className="language">
             <span className="sr-only">Language</span>
-            <select value={locale} onChange={(e) => setLocale(e.target.value as Locale)}>
+            <select value={locale} onChange={(e) => {
+              const nextLocale = e.target.value as Locale;
+              setLocale(nextLocale);
+              window.localStorage.setItem("georentalcars-locale", nextLocale);
+            }}>
               <option value="ka">KA</option><option value="en">EN</option>
               <option value="ru">RU</option><option value="ar">AR</option>
             </select>
