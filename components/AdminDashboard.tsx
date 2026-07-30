@@ -8,18 +8,19 @@ type AdminBooking = { id: string; customer: string; car: string; dates: string; 
 type AdminStats = { total: number; pending: number; confirmed: number; rejected: number; availableCars: number };
 type AdminContent = { heroEyebrow:string;heroTitle:string;heroAccent:string;heroCopy:string;fleetEyebrow:string;fleetTitle:string;fleetCopy:string;contactEyebrow:string;contactTitle:string;contactCopy:string;footerTagline:string };
 type AdminCategory = { id:string;name:string };
+type AdminPromoCode = { id:string;code:string;companyName:string;discountPercent:number;isActive:boolean };
 type AdminCarPhoto = { url:string;publicId:string };
 type AdminCar = { id:string;name:string;categoryId:string;description:string;dailyPrice:number;engineSpecification:string;seatCount:number;fuelType:"PETROL"|"DIESEL";transmission:"AUTOMATIC"|"MANUAL";isAvailable:boolean;photos:AdminCarPhoto[] };
 type AdminContact = { address:string;googleMapsUrl:string;phone:string;whatsapp:string };
 
 const sections = [
   ["მთავარი","⌂"],["ჯავშნები","▤"],["ავტომობილები","◇"],["კატეგორიები","◫"],["საიტის ტექსტები","✎"],
-  ["ქოვერის ფოტო","▧"],["მიღება / დაბრუნება","⌖"],["კონტაქტი","☎"],
+  ["პრომო კოდები","%"],["ქოვერის ფოტო","▧"],["მიღება / დაბრუნება","⌖"],["კონტაქტი","☎"],
 ] as const;
 
 export default function AdminDashboard(props: {
   email:string;coverUrl:string;pickupLocations:AdminPickupLocation[];bookings:AdminBooking[];stats:AdminStats;
-  content:AdminContent;cars:AdminCar[];categories:AdminCategory[];contact:AdminContact;
+  content:AdminContent;cars:AdminCar[];categories:AdminCategory[];promoCodes:AdminPromoCode[];contact:AdminContact;
 }) {
   const [section,setSection]=useState("მთავარი");
   const [cover,setCover]=useState(props.coverUrl);
@@ -28,6 +29,7 @@ export default function AdminDashboard(props: {
   const [content,setContent]=useState(props.content);
   const [cars,setCars]=useState(props.cars);
   const [categories,setCategories]=useState(props.categories);
+  const [promoCodes,setPromoCodes]=useState(props.promoCodes);
   const [contact,setContact]=useState(props.contact);
   const [message,setMessage]=useState("");
   const patch = async (url:string, body:unknown, success:string) => {
@@ -46,15 +48,19 @@ export default function AdminDashboard(props: {
   };
   const uploadCarPhotos=async(index:number,files:FileList|null)=>{
     if(!files?.length)return;
-    if(files.length>6){setMessage("ერთ მანქანაზე მაქსიმუმ 6 ფოტოს ატვირთვა შეიძლება.");return;}
-    setMessage("ფოტოები იტვირთება…");
-    const form=new FormData();
-    Array.from(files).forEach(file=>form.append("photos",file));
-    const response=await fetch("/api/admin/cars",{method:"POST",body:form});
-    const data=await response.json().catch(()=>({}));
-    if(!response.ok){setMessage(data.error||"ფოტოების ატვირთვა ვერ მოხერხდა.");return;}
-    setCars(rows=>rows.map((car,i)=>i===index?{...car,photos:data.photos}:car));
-    setMessage(`${data.photos.length} ფოტო აიტვირთა. ახლა დააჭირეთ „ავტომობილების შენახვას“.`);
+    const available=6-(cars[index]?.photos.length||0);
+    if(files.length>available){setMessage(`შეგიძლიათ კიდევ მაქსიმუმ ${available} ფოტოს დამატება.`);return;}
+    const uploaded:AdminCarPhoto[]=[];
+    for(const [fileIndex,file] of Array.from(files).entries()){
+      setMessage(`ფოტო იტვირთება ${fileIndex+1}/${files.length}…`);
+      const form=new FormData();form.append("photos",file);
+      const response=await fetch("/api/admin/cars",{method:"POST",body:form});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok){setMessage(data.error||`ფოტო ${fileIndex+1}-ის ატვირთვა ვერ მოხერხდა.`);return;}
+      uploaded.push(...data.photos);
+    }
+    setCars(rows=>rows.map((car,i)=>i===index?{...car,photos:[...car.photos,...uploaded].slice(0,6)}:car));
+    setMessage(`${uploaded.length} ფოტო აიტვირთა. ახლა დააჭირეთ „ავტომობილების შენახვას“.`);
   };
   const deleteCar=async(car:AdminCar)=>{
     if(!window.confirm(`ნამდვილად გსურთ „${car.name}“-ის წაშლა? ამ მოქმედების გაუქმება შეუძლებელია.`))return;
@@ -81,6 +87,17 @@ export default function AdminDashboard(props: {
       setCategories(rows=>rows.filter(item=>item.id!==category.id));
       setMessage("შეუნახავი კატეგორია წაიშალა.");
     }else setMessage(data.error||"კატეგორიის წაშლა ვერ მოხერხდა.");
+  };
+  const deletePromoCode=async(promo:AdminPromoCode)=>{
+    if(!window.confirm(`ნამდვილად გსურთ პრომო-კოდი „${promo.code}“-ის წაშლა?`))return;
+    const response=await fetch(`/api/admin/promo-codes?id=${encodeURIComponent(promo.id)}`,{method:"DELETE"});
+    const data=await response.json().catch(()=>({}));
+    if(response.ok){
+      setPromoCodes(rows=>data.archived?rows.map(item=>item.id===promo.id?{...item,isActive:false}:item):rows.filter(item=>item.id!==promo.id));
+      setMessage(data.archived?"გამოყენებული კოდი გაუქმდა და აღარ იმუშავებს.":"პრომო-კოდი წაიშალა.");
+    }else if(response.status===404&&promo.id.startsWith("promo-")){
+      setPromoCodes(rows=>rows.filter(item=>item.id!==promo.id));setMessage("შეუნახავი პრომო-კოდი წაიშალა.");
+    }else setMessage(data.error||"პრომო-კოდის წაშლა ვერ მოხერხდა.");
   };
   return <main className="admin-shell">
     <aside>
@@ -116,6 +133,13 @@ export default function AdminDashboard(props: {
         <button type="button" className="delete-car" onClick={()=>deleteCar(car)}>ავტომობილის წაშლა</button>
       </div></article>)}</div><button className="button save-list" onClick={()=>patch("/api/admin/cars",{cars},"ავტომობილები შენახულია.")}>ავტომობილების შენახვა</button></Panel>}
       {section==="კატეგორიები"&&<Panel title="კატეგორიების მართვა" button="+ კატეგორიის დამატება" onButton={()=>setCategories(v=>[...v,{id:`category-${Date.now()}`,name:"ახალი კატეგორია"}])}><div className="category-editor">{categories.map((category,index)=><div className="category-row" key={category.id}><label>კატეგორიის სახელი<input value={category.name} onChange={e=>setCategories(v=>v.map((x,i)=>i===index?{...x,name:e.target.value}:x))}/></label><button type="button" onClick={()=>deleteCategory(category)}>წაშლა</button></div>)}</div><button className="button save-list" onClick={()=>patch("/api/admin/categories",{categories},"კატეგორიები შენახულია.")}>კატეგორიების შენახვა</button></Panel>}
+      {section==="პრომო კოდები"&&<Panel title="პრომო კოდების მართვა" button="+ პრომო კოდის დამატება" onButton={()=>setPromoCodes(v=>[{id:`promo-${Date.now()}`,code:"",companyName:"",discountPercent:10,isActive:true},...v])}><div className="promo-editor">{promoCodes.map((promo,index)=><article key={promo.id}>
+        <label>კოდი<input value={promo.code} onChange={e=>setPromoCodes(v=>v.map((x,i)=>i===index?{...x,code:e.target.value.toUpperCase()}:x))}/></label>
+        <label>კომპანია / აღწერა<input value={promo.companyName} onChange={e=>setPromoCodes(v=>v.map((x,i)=>i===index?{...x,companyName:e.target.value}:x))}/></label>
+        <label>ფასდაკლება %<input type="number" min="0" max="100" value={promo.discountPercent} onChange={e=>setPromoCodes(v=>v.map((x,i)=>i===index?{...x,discountPercent:Number(e.target.value)}:x))}/></label>
+        <label className="toggle"><input type="checkbox" checked={promo.isActive} onChange={e=>setPromoCodes(v=>v.map((x,i)=>i===index?{...x,isActive:e.target.checked}:x))}/> აქტიურია</label>
+        <button type="button" onClick={()=>deletePromoCode(promo)}>წაშლა</button>
+      </article>)}</div><button className="button save-list" onClick={()=>patch("/api/admin/promo-codes",{promoCodes},"პრომო კოდები შენახულია.")}>პრომო კოდების შენახვა</button></Panel>}
       {section==="ქოვერის ფოტო"&&<Panel title="მთავარი ქოვერის ფოტო"><form className="cover-form" onSubmit={async e=>{e.preventDefault();setMessage("იტვირთება…");const r=await fetch("/api/admin/site-settings",{method:"POST",body:new FormData(e.currentTarget)});const d=await r.json();if(r.ok){setCover(d.heroImageUrl);setMessage("ქოვერი განახლებულია.")}else setMessage(d.error||"ატვირთვა ვერ მოხერხდა.")}}><img src={cover} alt="მიმდინარე ქოვერი"/><label>აირჩიეთ JPG, PNG ან WebP (მაქს. 10 MB)<input name="cover" type="file" accept="image/jpeg,image/png,image/webp" required/></label><button className="button">ახალი ქოვერის ატვირთვა</button></form></Panel>}
       {section==="მიღება / დაბრუნება"&&<Panel title="ლოკაციები და დამატებითი საფასური"><form className="location-settings" onSubmit={e=>{e.preventDefault();patch("/api/admin/pickup-locations",{locations},"ლოკაციები შენახულია.")}}>{locations.map((location,index)=><div key={location.id} className="location-editor"><label className="location-toggle"><input type="checkbox" checked={location.isActive} onChange={e=>setLocations(v=>v.map((x,i)=>i===index?{...x,isActive:e.target.checked}:x))}/><span>აქტიური ლოკაცია</span></label>{([["nameKa","ქართული"],["nameEn","English"],["nameRu","Русский"],["nameAr","العربية"]] as [keyof AdminPickupLocation,string][]).map(([key,label])=><label key={String(key)}>{label}<input value={String(location[key])} onChange={e=>setLocations(v=>v.map((x,i)=>i===index?{...x,[key]:e.target.value}:x))}/></label>)}<label>დამატებითი თანხა ($)<input type="number" min="0" value={location.fee} onChange={e=>setLocations(v=>v.map((x,i)=>i===index?{...x,fee:Number(e.target.value)}:x))}/></label></div>)}<button className="button">ლოკაციების შენახვა</button></form></Panel>}
       {section==="კონტაქტი"&&<Panel title="საკონტაქტო ინფორმაციის მართვა"><form className="settings-form" onSubmit={e=>{e.preventDefault();patch("/api/admin/contact",contact,"საკონტაქტო ინფორმაცია შენახულია.")}}>{([["address","ოფისის მისამართი"],["googleMapsUrl","Google Maps-ის ბმული"],["phone","ტელეფონი"],["whatsapp","WhatsApp"]] as [keyof AdminContact,string][]).map(([key,label])=><label key={key}>{label}<input value={contact[key]} onChange={e=>setContact({...contact,[key]:e.target.value})}/></label>)}<button className="button">კონტაქტის შენახვა</button></form></Panel>}

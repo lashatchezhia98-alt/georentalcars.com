@@ -103,6 +103,7 @@ export default function RentalExperience({
   const [pickupId, setPickupId] = useState(pickupLocations[0]?.id || "office-tbilisi");
   const [returnId, setReturnId] = useState(pickupLocations[0]?.id || "office-tbilisi");
   const [sent, setSent] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const t = messages[locale];
   const publicCopy = locale === "en" && content ? {
     hero: { ...t.hero, eyebrow: content.heroEyebrow, title: content.heroTitle, accent: content.heroAccent, copy: content.heroCopy },
@@ -113,7 +114,7 @@ export default function RentalExperience({
   const visibleCars = category === "All" ? cars : cars.filter((car) => car.category === category);
   const days = dateDays(start, end);
   const discount = durationDiscount(days);
-  const promoDiscount = promo.trim().toUpperCase() === "GEORGIA10" ? 10 : 0;
+  const promoDiscount = 0;
   const selectedPickup = pickupLocations.find((location) => location.id === pickupId) || pickupLocations[0];
   const selectedReturn = pickupLocations.find((location) => location.id === returnId) || pickupLocations[0];
   const pickupFee = selectedPickup?.fee || 0;
@@ -124,7 +125,8 @@ export default function RentalExperience({
   const pickupName = (location: PickupLocation) => ({ ka: location.nameKa, en: location.nameEn, ru: location.nameRu, ar: location.nameAr })[locale];
   const hasConflict = useMemo(() => Boolean(start && end && end < start), [start, end]);
   const today = new Date().toISOString().slice(0, 10);
-  const adultCutoff = new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().slice(0, 10);
+  const adultCutoff = new Date(new Date().setFullYear(new Date().getFullYear() - 20)).toISOString().slice(0, 10);
+  const showCalendar = (event: React.MouseEvent<HTMLInputElement>) => event.currentTarget.showPicker?.();
 
   useEffect(() => {
     document.body.style.overflow = bookingOpen || detailsOpen ? "hidden" : "";
@@ -142,7 +144,7 @@ export default function RentalExperience({
     };
   }, [bookingOpen, detailsOpen]);
 
-  function beginBooking(car = selectedCar) { setSelectedCar(car); setSent(false); setBookingOpen(true); }
+  function beginBooking(car = selectedCar) { setSelectedCar(car); setSent(false); setSubmitError(""); setBookingOpen(true); }
   function viewCar(car: Car) { setSelectedCar(car); setGalleryIndex(0); setDetailsOpen(true); }
   function changeStartDate(value: string) {
     setStart(value);
@@ -151,12 +153,15 @@ export default function RentalExperience({
   async function submitBooking(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!days || hasConflict) return;
+    setSubmitError("");
     const form = new FormData(event.currentTarget);
     const response = await fetch("/api/bookings", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(Object.fromEntries(form.entries())),
     });
+    const result = await response.json().catch(() => ({}));
     if (response.ok) setSent(true);
+    else setSubmitError(result.error || "Booking request could not be sent.");
   }
 
   return (
@@ -199,8 +204,8 @@ export default function RentalExperience({
         <div className="availability-card">
           <div className="pickup-field"><span>{t.booking.pickup}</span><select aria-label={t.booking.pickup} value={pickupId} onChange={(event) => setPickupId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></div>
           <div className="pickup-field"><span>{identityLabels[locale].returnLocation}</span><select aria-label={identityLabels[locale].returnLocation} value={returnId} onChange={(event) => setReturnId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></div>
-          <div><span>{t.booking.start}</span><input aria-label={t.booking.start} type="date" min={today} value={start} onChange={(e) => changeStartDate(e.target.value)} /></div>
-          <div><span>{t.booking.end}</span><input aria-label={t.booking.end} type="date" min={start || today} value={end} onChange={(e) => setEnd(e.target.value)} /></div>
+          <div><span>{t.booking.start}</span><input aria-label={t.booking.start} type="date" min={today} value={start} onClick={showCalendar} onChange={(e) => changeStartDate(e.target.value)} /></div>
+          <div><span>{t.booking.end}</span><input aria-label={t.booking.end} type="date" min={start || today} value={end} onClick={showCalendar} onChange={(e) => setEnd(e.target.value)} /></div>
           <button className="button" onClick={() => document.querySelector("#cars")?.scrollIntoView()}>{t.booking.search}</button>
         </div>
       </section>
@@ -288,18 +293,19 @@ export default function RentalExperience({
             <div className="form-grid">
               <label>{t.booking.first}<input required name="firstName" /></label><label>{t.booking.last}<input required name="lastName" /></label>
               <label>{t.booking.phone}<input required name="phone" type="tel" /></label><label>{t.booking.email}<input required name="email" type="email" /></label>
-              <label>{identityLabels[locale].birthDate}<input required name="birthDate" type="date" max={adultCutoff} /></label>
+              <label>{identityLabels[locale].birthDate}<input required name="birthDate" type="date" max={adultCutoff} onClick={showCalendar} /></label>
               <label>{identityLabels[locale].passportNumber}<input required name="passportNumber" autoComplete="off" /></label>
               <label>{identityLabels[locale].driverLicenseNumber}<input required name="driverLicenseNumber" autoComplete="off" /></label>
-              <label>{identityLabels[locale].driverLicenseExpiry}<input required name="driverLicenseExpiry" type="date" min={end || today} /></label>
-              <label>{t.booking.start}<input required name="startDate" type="date" min={today} value={start} onChange={(e) => changeStartDate(e.target.value)} /></label>
-              <label>{t.booking.end}<input required name="endDate" type="date" min={start || today} value={end} onChange={(e) => setEnd(e.target.value)} /></label>
+              <label>{identityLabels[locale].driverLicenseExpiry}<input required name="driverLicenseExpiry" type="date" min={end || today} onClick={showCalendar} /></label>
+              <label>{t.booking.start}<input required name="startDate" type="date" min={today} value={start} onClick={showCalendar} onChange={(e) => changeStartDate(e.target.value)} /></label>
+              <label>{t.booking.end}<input required name="endDate" type="date" min={start || today} value={end} onClick={showCalendar} onChange={(e) => setEnd(e.target.value)} /></label>
               <label>{t.booking.pickup}<select required name="pickupLocation" value={pickupId} onChange={(event) => setPickupId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></label>
               <label>{identityLabels[locale].returnLocation}<select required name="returnLocation" value={returnId} onChange={(event) => setReturnId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></label>
-              <label className="full">{t.booking.promo}<input name="promoCode" value={promo} onChange={(e) => setPromo(e.target.value)} placeholder="GEORGIA10" /></label>
+              <label className="full">{t.booking.promo}<input name="promoCode" value={promo} onChange={(e) => setPromo(e.target.value)} autoComplete="off" /></label>
             </div>
             <input type="hidden" name="carId" value={selectedCar.id} /><input type="hidden" name="language" value={locale} />
             {hasConflict && <p className="error">{t.booking.conflict}</p>}
+            {submitError && <p className="error">{submitError}</p>}
             <div className="summary"><div><span>{days || "—"} {t.booking.days}</span><span>${subtotal.toFixed(2)}</span></div><div><span>{t.booking.discount} ({discount + promoDiscount}%)</span><span>−${(subtotal - rentalTotal).toFixed(2)}</span></div><div><span>{locale === "ka" ? "მიწოდების საფასური" : "Pickup fee"}</span><span>{pickupFee ? `+$${pickupFee.toFixed(2)}` : locale === "ka" ? "უფასო" : "Free"}</span></div><div><span>{locale === "ka" ? "დაბრუნების საფასური" : "Return fee"}</span><span>{returnFee ? `+$${returnFee.toFixed(2)}` : locale === "ka" ? "უფასო" : "Free"}</span></div><div className="total"><strong>{t.booking.total}</strong><strong>${total.toFixed(2)}</strong></div></div>
             <button className="button full-button" disabled={!days || hasConflict}>{t.booking.submit} ↗</button>
           </form>}

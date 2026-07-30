@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) redirect("/admin/login");
-  const [settings, pickupLocations, bookings, bookingStats, availableCars, cars, categories, contactSettings] = await Promise.all([
+  const [settings, pickupLocations, bookings, bookingStats, availableCars, cars, categories, contactSettings, promoCodes] = await Promise.all([
     prisma.siteSettings ? prisma.siteSettings.findUnique({ where: { id: "default" } }).catch(() => null) : null,
     prisma.pickupLocation ? prisma.pickupLocation.findMany({ orderBy: { sortOrder: "asc" } }).catch(() => []) : [],
     prisma.booking.findMany({ include: { car: true }, orderBy: { createdAt: "desc" }, take: 100 }).catch(() => []),
@@ -18,6 +18,7 @@ export default async function AdminPage() {
     prisma.car.findMany({ include: { photos: { orderBy: { sortOrder: "asc" }, take: 6 } }, orderBy: { createdAt: "asc" } }).catch(() => []),
     prisma.carCategory.findMany({ orderBy: { name: "asc" } }).catch(() => []),
     prisma.contactSettings.findUnique({ where: { id: "default" }, include: { numbers: true } }).catch(() => null),
+    prisma.promoCode.findMany({ orderBy: { createdAt: "desc" } }).catch(() => []),
   ]);
   const stats = Object.fromEntries(bookingStats.map((row) => [row.status, row._count._all]));
   return <AdminDashboard
@@ -56,6 +57,7 @@ export default async function AdminPage() {
       photos: car.photos.map((photo) => ({ url: photo.secureUrl, publicId: photo.cloudinaryPublicId })),
     }))}
     categories={categories.map((category) => ({ id: category.id, name: category.name }))}
+    promoCodes={promoCodes.map((promo) => ({ id: promo.id, code: promo.code, companyName: promo.companyName, discountPercent: Number(promo.discountPercent), isActive: promo.isActive }))}
     contact={{
       address: contactSettings?.address || "",
       googleMapsUrl: contactSettings?.googleMapsUrl || "",

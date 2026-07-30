@@ -25,13 +25,13 @@ export async function POST(request: Request) {
   const driverLicenseExpiry = new Date(`${data.driverLicenseExpiry}T00:00:00Z`);
   const days = rentalDays(start, end);
   const adultCutoff = new Date();
-  adultCutoff.setUTCFullYear(adultCutoff.getUTCFullYear() - 18);
+  adultCutoff.setUTCFullYear(adultCutoff.getUTCFullYear() - 20);
 
   if (!days || days > 365 || start < new Date(new Date().toISOString().slice(0, 10))) {
     return NextResponse.json({ error: "Invalid rental period" }, { status: 400 });
   }
   if (birthDate > adultCutoff) {
-    return NextResponse.json({ error: "The driver must be at least 18 years old" }, { status: 400 });
+    return NextResponse.json({ error: "The driver must be at least 20 years old" }, { status: 400 });
   }
   if (driverLicenseExpiry < end) {
     return NextResponse.json({ error: "Driver’s license must remain valid through the rental end date" }, { status: 400 });
