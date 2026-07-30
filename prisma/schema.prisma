@@ -72,9 +72,9 @@ model Booking {
   customerPhone String
   customerEmail String
   birthDate DateTime
-  passportNumber String
-  driverLicenseNumber String
-  driverLicenseExpiry DateTime
+  passportNumber String?
+  driverLicenseNumber String?
+  driverLicenseExpiry DateTime?
   customerLanguage String
   pickupLocation String
   pickupFee Decimal @default(0) @db.Decimal(10,2)

@@ -27,7 +27,9 @@ export async function POST(request: Request) {
   const start = new Date(`${data.startDate}T00:00:00Z`);
   const end = new Date(`${data.endDate}T00:00:00Z`);
   const birthDate = new Date(`${data.birthDate}T00:00:00Z`);
-  const driverLicenseExpiry = new Date(`${data.driverLicenseExpiry}T00:00:00Z`);
+  const driverLicenseExpiry = data.driverLicenseExpiry
+    ? new Date(`${data.driverLicenseExpiry}T00:00:00Z`)
+    : null;
   const days = rentalDays(start, end);
   const adultCutoff = new Date();
   adultCutoff.setUTCFullYear(adultCutoff.getUTCFullYear() - 20);
@@ -38,7 +40,7 @@ export async function POST(request: Request) {
   if (birthDate > adultCutoff) {
     return NextResponse.json({ error: "The driver must be at least 20 years old" }, { status: 400 });
   }
-  if (driverLicenseExpiry < end) {
+  if (driverLicenseExpiry && driverLicenseExpiry < end) {
     return NextResponse.json({ error: "Driver’s license must remain valid through the rental end date" }, { status: 400 });
   }
 
@@ -84,8 +86,8 @@ export async function POST(request: Request) {
       customerPhone: data.phone,
       customerEmail: data.email.toLowerCase(),
       birthDate,
-      passportNumber: data.passportNumber.toUpperCase(),
-      driverLicenseNumber: data.driverLicenseNumber.toUpperCase(),
+      passportNumber: data.passportNumber?.toUpperCase(),
+      driverLicenseNumber: data.driverLicenseNumber?.toUpperCase(),
       driverLicenseExpiry,
       customerLanguage: data.language,
       pickupLocation: pickup.id,
@@ -117,9 +119,9 @@ export async function POST(request: Request) {
     customerPhone: booking.customerPhone,
     customerEmail: booking.customerEmail,
     birthDate: data.birthDate,
-    passportNumber: data.passportNumber,
-    driverLicenseNumber: data.driverLicenseNumber,
-    driverLicenseExpiry: data.driverLicenseExpiry,
+    passportNumber: data.passportNumber || "—",
+    driverLicenseNumber: data.driverLicenseNumber || "—",
+    driverLicenseExpiry: data.driverLicenseExpiry || "—",
     carName: car.name,
     carCategory: car.category.name,
     dailyPrice,

@@ -331,9 +331,9 @@ export default function RentalExperience({
               <label>{t.booking.first}<input required name="firstName" /></label><label>{t.booking.last}<input required name="lastName" /></label>
               <label>{t.booking.phone}<input required name="phone" type="tel" /></label><label>{t.booking.email}<input required name="email" type="email" /></label>
               <label>{identityLabels[locale].birthDate}<input required name="birthDate" type="date" max={adultCutoff} onClick={showCalendar} /></label>
-              <label>{identityLabels[locale].passportNumber}<input required name="passportNumber" autoComplete="off" /></label>
-              <label>{identityLabels[locale].driverLicenseNumber}<input required name="driverLicenseNumber" autoComplete="off" /></label>
-              <label>{identityLabels[locale].driverLicenseExpiry}<input required name="driverLicenseExpiry" type="date" min={end || today} onClick={showCalendar} /></label>
+              <label>{identityLabels[locale].passportNumber}<input name="passportNumber" autoComplete="off" /></label>
+              <label>{identityLabels[locale].driverLicenseNumber}<input name="driverLicenseNumber" autoComplete="off" /></label>
+              <label>{identityLabels[locale].driverLicenseExpiry}<input name="driverLicenseExpiry" type="date" min={end || today} onClick={showCalendar} /></label>
               <label>{t.booking.start}<input required name="startDate" type="date" min={today} value={start} onClick={showCalendar} onChange={(e) => changeStartDate(e.target.value)} /></label>
               <label>{t.booking.end}<input required name="endDate" type="date" min={start || today} value={end} onClick={showCalendar} onChange={(e) => setEnd(e.target.value)} /></label>
               <label>{t.booking.pickup}<select required name="pickupLocation" value={pickupId} onChange={(event) => setPickupId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></label>
