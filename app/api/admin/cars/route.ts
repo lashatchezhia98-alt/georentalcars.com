@@ -71,3 +71,27 @@ export async function PATCH(request: Request) {
   }
   return NextResponse.json({ ok: true });
 }
+
+export async function DELETE(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const id = new URL(request.url).searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "მანქანის ID არ არის მითითებული." }, { status: 400 });
+
+  const car = await prisma.car.findUnique({
+    where: { id },
+    include: { photos: true, _count: { select: { bookings: true } } },
+  });
+  if (!car) return NextResponse.json({ error: "მანქანა ვერ მოიძებნა." }, { status: 404 });
+  if (car._count.bookings > 0) {
+    return NextResponse.json({
+      error: "ამ მანქანაზე უკვე არსებობს ჯავშანი. ისტორიის შესანარჩუნებლად გამორთეთ „ხელმისაწვდომია“ და შეინახეთ.",
+    }, { status: 409 });
+  }
+
+  await prisma.car.delete({ where: { id } });
+  await Promise.all(car.photos
+    .filter((photo) => !photo.cloudinaryPublicId.startsWith("seed/") && !photo.cloudinaryPublicId.startsWith("admin/"))
+    .map((photo) => cloudinary.uploader.destroy(photo.cloudinaryPublicId).catch(() => undefined)));
+  return NextResponse.json({ ok: true });
+}

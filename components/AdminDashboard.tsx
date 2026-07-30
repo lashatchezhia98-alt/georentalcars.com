@@ -56,6 +56,19 @@ export default function AdminDashboard(props: {
     setCars(rows=>rows.map((car,i)=>i===index?{...car,photos:data.photos}:car));
     setMessage(`${data.photos.length} ფოტო აიტვირთა. ახლა დააჭირეთ „ავტომობილების შენახვას“.`);
   };
+  const deleteCar=async(car:AdminCar)=>{
+    if(!window.confirm(`ნამდვილად გსურთ „${car.name}“-ის წაშლა? ამ მოქმედების გაუქმება შეუძლებელია.`))return;
+    setMessage("ავტომობილი იშლება…");
+    const response=await fetch(`/api/admin/cars?id=${encodeURIComponent(car.id)}`,{method:"DELETE"});
+    const data=await response.json().catch(()=>({}));
+    if(response.ok){
+      setCars(rows=>rows.filter(item=>item.id!==car.id));
+      setMessage("ავტომობილი და მისი ფოტოები წაიშალა.");
+    }else if(response.status===404&&car.id.startsWith("car-")){
+      setCars(rows=>rows.filter(item=>item.id!==car.id));
+      setMessage("შეუნახავი ავტომობილი წაიშალა.");
+    }else setMessage(data.error||"ავტომობილის წაშლა ვერ მოხერხდა.");
+  };
   return <main className="admin-shell">
     <aside>
       <a className="brand admin-brand" href="/"><BrandMark/><span className="brand-name">Geo<span>Rental</span>Cars</span></a>
@@ -87,6 +100,7 @@ export default function AdminDashboard(props: {
         <label>ტრანსმისია<select value={car.transmission} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,transmission:e.target.value as "AUTOMATIC"|"MANUAL"}:x))}><option value="AUTOMATIC">ავტომატიკა</option><option value="MANUAL">მექანიკა</option></select></label>
         <label className="wide">აღწერა<textarea value={car.description} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,description:e.target.value}:x))}/></label>
         <label className="toggle"><input type="checkbox" checked={car.isAvailable} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,isAvailable:e.target.checked}:x))}/> ხელმისაწვდომია</label>
+        <button type="button" className="delete-car" onClick={()=>deleteCar(car)}>ავტომობილის წაშლა</button>
       </div></article>)}</div><button className="button save-list" onClick={()=>patch("/api/admin/cars",{cars},"ავტომობილები შენახულია.")}>ავტომობილების შენახვა</button></Panel>}
       {section==="კატეგორიები"&&<Panel title="კატეგორიების მართვა" button="+ კატეგორიის დამატება" onButton={()=>setCategories(v=>[...v,{id:`category-${Date.now()}`,name:"ახალი კატეგორია"}])}><div className="category-editor">{categories.map((category,index)=><label key={category.id}>კატეგორიის სახელი<input value={category.name} onChange={e=>setCategories(v=>v.map((x,i)=>i===index?{...x,name:e.target.value}:x))}/></label>)}</div><button className="button save-list" onClick={()=>patch("/api/admin/categories",{categories},"კატეგორიები შენახულია.")}>კატეგორიების შენახვა</button></Panel>}
       {section==="ქოვერის ფოტო"&&<Panel title="მთავარი ქოვერის ფოტო"><form className="cover-form" onSubmit={async e=>{e.preventDefault();setMessage("იტვირთება…");const r=await fetch("/api/admin/site-settings",{method:"POST",body:new FormData(e.currentTarget)});const d=await r.json();if(r.ok){setCover(d.heroImageUrl);setMessage("ქოვერი განახლებულია.")}else setMessage(d.error||"ატვირთვა ვერ მოხერხდა.")}}><img src={cover} alt="მიმდინარე ქოვერი"/><label>აირჩიეთ JPG, PNG ან WebP (მაქს. 10 MB)<input name="cover" type="file" accept="image/jpeg,image/png,image/webp" required/></label><button className="button">ახალი ქოვერის ატვირთვა</button></form></Panel>}
