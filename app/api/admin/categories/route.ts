@@ -16,3 +16,23 @@ export async function PATCH(request: Request) {
   }
   return NextResponse.json({ ok: true });
 }
+
+export async function DELETE(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const id = new URL(request.url).searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "კატეგორიის ID არ არის მითითებული." }, { status: 400 });
+
+  const category = await prisma.carCategory.findUnique({
+    where: { id },
+    include: { _count: { select: { cars: true } } },
+  });
+  if (!category) return NextResponse.json({ error: "კატეგორია ვერ მოიძებნა." }, { status: 404 });
+  if (category._count.cars > 0) {
+    return NextResponse.json({
+      error: `კატეგორიაში არის ${category._count.cars} ავტომობილი. ჯერ გადაიყვანეთ ისინი სხვა კატეგორიაში ან წაშალეთ.`,
+    }, { status: 409 });
+  }
+  await prisma.carCategory.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}
