@@ -70,8 +70,13 @@ model Booking {
   customerName String
   customerPhone String
   customerEmail String
+  birthDate DateTime
+  passportNumber String
+  driverLicenseNumber String
+  driverLicenseExpiry DateTime
   customerLanguage String
   pickupLocation String
+  pickupFee Decimal @default(0) @db.Decimal(10,2)
   startDate DateTime
   endDate DateTime
   totalDays Int
@@ -149,4 +154,24 @@ model ContactNumber {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([contactSettingsId, type, isActive, sortOrder])
+}
+
+model SiteSettings {
+  id                     String   @id @default("default")
+  heroImageUrl           String
+  heroCloudinaryPublicId String?
+  updatedAt              DateTime @updatedAt
+}
+
+model PickupLocation {
+  id        String   @id
+  nameKa    String
+  nameEn    String
+  nameRu    String
+  nameAr    String
+  fee       Decimal  @default(0) @db.Decimal(10, 2)
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
