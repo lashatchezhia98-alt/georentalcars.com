@@ -18,15 +18,17 @@ type AdminPromoCode = { id:string;code:string;companyName:string;discountPercent
 type AdminCarPhoto = { url:string;publicId:string };
 type AdminCar = { id:string;name:string;categoryId:string;description:string;dailyPrice:number;engineSpecification:string;seatCount:number;fuelType:"PETROL"|"DIESEL";transmission:"AUTOMATIC"|"MANUAL";isAvailable:boolean;photos:AdminCarPhoto[] };
 type AdminContact = { address:string;googleMapsUrl:string;phone:string;whatsapp:string };
+type AdminDiscountSettings = { startDay:number;basePercent:number;incrementPerDay:number;maxPercent:number };
 
 const sections = [
   ["მთავარი","⌂"],["ჯავშნები","▤"],["ბუღალტერია","$"],["ავტომობილები","◇"],["კატეგორიები","◫"],["საიტის ტექსტები","✎"],
   ["პრომო კოდები","%"],["ქოვერის ფოტო","▧"],["მიღება / დაბრუნება","⌖"],["კონტაქტი","☎"],
+  ["ფასდაკლების გამოთვლის ლოგიკა","↘"],
 ] as const;
 
 export default function AdminDashboard(props: {
   email:string;role:string;coverUrl:string;pickupLocations:AdminPickupLocation[];bookings:AdminBooking[];stats:AdminStats;
-  content:LocalizedAdminContent;cars:AdminCar[];categories:AdminCategory[];promoCodes:AdminPromoCode[];contact:AdminContact;
+  content:LocalizedAdminContent;cars:AdminCar[];categories:AdminCategory[];promoCodes:AdminPromoCode[];contact:AdminContact;discountSettings:AdminDiscountSettings;
 }) {
   const [section,setSection]=useState("მთავარი");
   const [cover,setCover]=useState(props.coverUrl);
@@ -38,6 +40,7 @@ export default function AdminDashboard(props: {
   const [categories,setCategories]=useState(props.categories);
   const [promoCodes,setPromoCodes]=useState(props.promoCodes);
   const [contact,setContact]=useState(props.contact);
+  const [discountSettings,setDiscountSettings]=useState(props.discountSettings);
   const [message,setMessage]=useState("");
   const [bookingActionId,setBookingActionId]=useState("");
   const patch = async (url:string, body:unknown, success:string) => {
@@ -169,6 +172,14 @@ export default function AdminDashboard(props: {
         <label className="toggle"><input type="checkbox" checked={promo.isActive} onChange={e=>setPromoCodes(v=>v.map((x,i)=>i===index?{...x,isActive:e.target.checked}:x))}/> აქტიურია</label>
         <button type="button" onClick={()=>deletePromoCode(promo)}>წაშლა</button>
       </article>)}</div><button className="button save-list" onClick={()=>patch("/api/admin/promo-codes",{promoCodes},"პრომო კოდები შენახულია.")}>პრომო კოდების შენახვა</button></Panel>}
+      {section==="ფასდაკლების გამოთვლის ლოგიკა"&&<Panel title="ფასდაკლების გამოთვლის ლოგიკა"><p className="discount-help">ფასდაკლება იწყება მითითებული დღიდან. შემდეგ ყოველ დამატებულ დღეზე ემატება თქვენ მიერ განსაზღვრული პროცენტი, მაგრამ 30-ე დღის შემდეგ აღარ იზრდება და მაქსიმალურ ზღვარს არ სცდება.</p><form className="discount-settings-form" onSubmit={e=>{e.preventDefault();patch("/api/admin/discount-settings",discountSettings,"ფასდაკლების გამოთვლის ლოგიკა შენახულია.")}}>
+        <label>ფასდაკლების დაწყების დღე<input type="number" min="1" max="30" required value={discountSettings.startDay} onChange={e=>setDiscountSettings({...discountSettings,startDay:Number(e.target.value)})}/></label>
+        <label>საწყისი ფასდაკლება (%)<input type="number" min="0" max="100" step="0.01" required value={discountSettings.basePercent} onChange={e=>setDiscountSettings({...discountSettings,basePercent:Number(e.target.value)})}/></label>
+        <label>ყოველ დამატებით დღეზე (%)<input type="number" min="0" max="100" step="0.01" required value={discountSettings.incrementPerDay} onChange={e=>setDiscountSettings({...discountSettings,incrementPerDay:Number(e.target.value)})}/></label>
+        <label>მაქსიმალური ფასდაკლება (%)<input type="number" min="0" max="100" step="0.01" required value={discountSettings.maxPercent} onChange={e=>setDiscountSettings({...discountSettings,maxPercent:Number(e.target.value)})}/></label>
+        <div className="discount-preview"><small>მაგალითი</small><strong>{discountSettings.startDay} დღე — {discountSettings.basePercent}%</strong><span>{Math.min(30,discountSettings.startDay+1)} დღე — {Math.min(discountSettings.maxPercent,discountSettings.basePercent+discountSettings.incrementPerDay)}%</span><span>30+ დღე — {Math.min(discountSettings.maxPercent,discountSettings.basePercent+Math.max(0,30-discountSettings.startDay)*discountSettings.incrementPerDay)}%</span></div>
+        <button className="button">ლოგიკის შენახვა</button>
+      </form></Panel>}
       {section==="ქოვერის ფოტო"&&<Panel title="მთავარი ქოვერის ფოტო"><form className="cover-form" onSubmit={async e=>{e.preventDefault();setMessage("იტვირთება…");const r=await fetch("/api/admin/site-settings",{method:"POST",body:new FormData(e.currentTarget)});const d=await r.json();if(r.ok){setCover(d.heroImageUrl);setMessage("ქოვერი განახლებულია.")}else setMessage(d.error||"ატვირთვა ვერ მოხერხდა.")}}><img src={cover} alt="მიმდინარე ქოვერი"/><label>აირჩიეთ JPG, PNG ან WebP (მაქს. 10 MB)<input name="cover" type="file" accept="image/jpeg,image/png,image/webp" required/></label><button className="button">ახალი ქოვერის ატვირთვა</button></form></Panel>}
       {section==="მიღება / დაბრუნება"&&<Panel title="ლოკაციები და დამატებითი საფასური"><form className="location-settings" onSubmit={e=>{e.preventDefault();patch("/api/admin/pickup-locations",{locations},"ლოკაციები შენახულია.")}}>{locations.map((location,index)=><div key={location.id} className="location-editor"><label className="location-toggle"><input type="checkbox" checked={location.isActive} onChange={e=>setLocations(v=>v.map((x,i)=>i===index?{...x,isActive:e.target.checked}:x))}/><span>აქტიური ლოკაცია</span></label>{([["nameKa","ქართული"],["nameEn","English"],["nameRu","Русский"],["nameAr","العربية"]] as [keyof AdminPickupLocation,string][]).map(([key,label])=><label key={String(key)}>{label}<input value={String(location[key])} onChange={e=>setLocations(v=>v.map((x,i)=>i===index?{...x,[key]:e.target.value}:x))}/></label>)}<label>დამატებითი თანხა ($)<input type="number" min="0" value={location.fee} onChange={e=>setLocations(v=>v.map((x,i)=>i===index?{...x,fee:Number(e.target.value)}:x))}/></label></div>)}<button className="button">ლოკაციების შენახვა</button></form></Panel>}
       {section==="კონტაქტი"&&<Panel title="საკონტაქტო ინფორმაციის მართვა"><form className="settings-form" onSubmit={e=>{e.preventDefault();patch("/api/admin/contact",contact,"საკონტაქტო ინფორმაცია შენახულია.")}}>{([["address","ოფისის მისამართი"],["googleMapsUrl","Google Maps-ის ბმული"],["phone","ტელეფონი"],["whatsapp","WhatsApp"]] as [keyof AdminContact,string][]).map(([key,label])=><label key={key}>{label}<input value={contact[key]} onChange={e=>setContact({...contact,[key]:e.target.value})}/></label>)}<button className="button">კონტაქტის შენახვა</button></form></Panel>}

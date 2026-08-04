@@ -8,7 +8,7 @@ import ar from "@/messages/ar.json";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [settings, pickupLocations, cars, categories, contactSettings] = await Promise.all([
+  const [settings, pickupLocations, cars, categories, contactSettings, discountSettings] = await Promise.all([
     prisma.siteSettings ? prisma.siteSettings.findUnique({ where: { id: "default" } }).catch(() => null) : null,
     prisma.pickupLocation
       ? prisma.pickupLocation.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }).catch(() => [])
@@ -23,6 +23,7 @@ export default async function Home() {
       where: { id: "default" },
       include: { numbers: { where: { isActive: true }, orderBy: { sortOrder: "asc" } } },
     }).catch(() => null),
+    prisma.discountSettings.findUnique({ where: { id: "default" } }).catch(() => null),
   ]);
   const phone = contactSettings?.numbers.find((number) => number.type === "PHONE")?.number || "+995592710606";
   const whatsapp = contactSettings?.numbers.find((number) => number.type === "WHATSAPP")?.number || phone;
@@ -72,5 +73,11 @@ export default async function Home() {
       whatsapp,
     }}
     content={localizedContent}
+    discountSettings={{
+      startDay: discountSettings?.startDay ?? 6,
+      basePercent: Number(discountSettings?.basePercent ?? 6),
+      incrementPerDay: Number(discountSettings?.incrementPerDay ?? 1),
+      maxPercent: Number(discountSettings?.maxPercent ?? 30),
+    }}
   />;
 }

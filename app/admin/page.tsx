@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) redirect("/admin/login");
-  const [settings, pickupLocations, bookings, bookingStats, availableCars, cars, categories, contactSettings, promoCodes] = await Promise.all([
+  const [settings, pickupLocations, bookings, bookingStats, availableCars, cars, categories, contactSettings, promoCodes, discountSettings] = await Promise.all([
     prisma.siteSettings ? prisma.siteSettings.findUnique({ where: { id: "default" } }).catch(() => null) : null,
     prisma.pickupLocation ? prisma.pickupLocation.findMany({ orderBy: { sortOrder: "asc" } }).catch(() => []) : [],
     prisma.booking.findMany({ include: { car: true, promoCode: true }, orderBy: { createdAt: "desc" } }).catch(() => []),
@@ -23,6 +23,7 @@ export default async function AdminPage() {
     prisma.carCategory.findMany({ orderBy: { name: "asc" } }).catch(() => []),
     prisma.contactSettings.findUnique({ where: { id: "default" }, include: { numbers: true } }).catch(() => null),
     prisma.promoCode.findMany({ orderBy: { createdAt: "desc" } }).catch(() => []),
+    prisma.discountSettings.findUnique({ where: { id: "default" } }).catch(() => null),
   ]);
   const stats = Object.fromEntries(bookingStats.map((row) => [row.status, row._count._all]));
   const defaultContent = {
@@ -95,6 +96,12 @@ export default async function AdminPage() {
     }))}
     categories={categories.map((category) => ({ id: category.id, name: category.name }))}
     promoCodes={promoCodes.map((promo) => ({ id: promo.id, code: promo.code, companyName: promo.companyName, discountPercent: Number(promo.discountPercent), isActive: promo.isActive }))}
+    discountSettings={{
+      startDay: discountSettings?.startDay ?? 6,
+      basePercent: Number(discountSettings?.basePercent ?? 6),
+      incrementPerDay: Number(discountSettings?.incrementPerDay ?? 1),
+      maxPercent: Number(discountSettings?.maxPercent ?? 30),
+    }}
     contact={{
       address: contactSettings?.address || "",
       googleMapsUrl: contactSettings?.googleMapsUrl || "",

@@ -26,6 +26,7 @@ type PublicContent = {
   contactEyebrow: string; contactTitle: string; contactCopy: string; footerTagline: string;
 };
 type LocalizedPublicContent = Record<Locale,PublicContent>;
+type DiscountSettings = { startDay:number;basePercent:number;incrementPerDay:number;maxPercent:number };
 
 const messages = { ka, en, ru, ar } as const;
 const fallbackCars: Car[] = [
@@ -77,10 +78,10 @@ function dateDays(start: string, end: string) {
   if (!start || !end) return 0;
   return Math.max(0, Math.ceil((new Date(end).getTime() - new Date(start).getTime()) / 86400000) + 1);
 }
-function durationDiscount(days: number) {
-  if (days < 6) return 0;
+function durationDiscount(days: number, rule: DiscountSettings) {
+  if (days < rule.startDay) return 0;
   const discountDay = Math.min(days, 30);
-  return discountDay;
+  return Math.min(rule.maxPercent, rule.basePercent + (discountDay - rule.startDay) * rule.incrementPerDay);
 }
 
 export default function RentalExperience({
@@ -95,6 +96,7 @@ export default function RentalExperience({
     whatsapp: "+995592710606",
   },
   content,
+  discountSettings = { startDay:6,basePercent:6,incrementPerDay:1,maxPercent:30 },
 }: {
   heroImageUrl?: string;
   pickupLocations?: PickupLocation[];
@@ -102,6 +104,7 @@ export default function RentalExperience({
   categories?: string[];
   contact?: PublicContact;
   content?: LocalizedPublicContent;
+  discountSettings?: DiscountSettings;
 }) {
   const [locale, setLocale] = useState<Locale>("en");
   const [menu, setMenu] = useState(false);
@@ -132,7 +135,7 @@ export default function RentalExperience({
   const rtl = locale === "ar";
   const visibleCars = category === "All" ? cars : cars.filter((car) => car.category === category);
   const days = dateDays(start, end);
-  const discount = durationDiscount(days);
+  const discount = durationDiscount(days, discountSettings);
   const selectedPickup = pickupLocations.find((location) => location.id === pickupId) || pickupLocations[0];
   const selectedReturn = pickupLocations.find((location) => location.id === returnId) || pickupLocations[0];
   const pickupFee = selectedPickup?.fee || 0;
