@@ -26,6 +26,8 @@ export const bookingSchema = z.object({
   language: z.enum(["ka", "en", "ru", "ar"]),
   startDate: z.iso.date(),
   endDate: z.iso.date(),
+  pickupTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  returnTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   pickupLocation: z.string().trim().min(1).max(80),
   returnLocation: z.string().trim().min(1).max(80),
   promoCode: z.string().trim().max(30).optional(),

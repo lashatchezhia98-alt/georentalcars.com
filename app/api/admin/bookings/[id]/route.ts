@@ -41,6 +41,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       carName: booking.car.name,
       startDate: booking.startDate.toISOString().slice(0, 10),
       endDate: booking.endDate.toISOString().slice(0, 10),
+      pickupTime: booking.pickupTime || "—",
+      returnTime: booking.returnTime || "—",
       totalPrice: Number(booking.totalPrice),
     });
   } catch {

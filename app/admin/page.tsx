@@ -69,7 +69,7 @@ export default async function AdminPage() {
         id: booking.id,
         customer: booking.customerName,
         car: booking.car.name,
-        dates: `${booking.startDate.toISOString().slice(0, 10)} — ${booking.endDate.toISOString().slice(0, 10)}`,
+        dates: `${booking.startDate.toISOString().slice(0, 10)} ${booking.pickupTime || "—"} — ${booking.endDate.toISOString().slice(0, 10)} ${booking.returnTime || "—"}`,
         createdAt: booking.createdAt.toISOString().slice(0, 10),
         status: booking.status,
         totalPrice: money(Number(booking.totalPrice)),

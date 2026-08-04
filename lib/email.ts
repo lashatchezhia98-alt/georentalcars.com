@@ -22,6 +22,8 @@ export async function sendBookingEmails(data: Record<string, string | number>) {
     ["Driver’s license expiry", data.driverLicenseExpiry],
     ["Car", `${data.carName} — ${data.carCategory}`],
     ["Rental dates", `${data.startDate} — ${data.endDate}`],
+    ["Pickup time (Georgia, UTC+4)", data.pickupTime],
+    ["Return time (Georgia, UTC+4)", data.returnTime],
     ["Total days", data.totalDays],
     ["Daily price", `$${Number(data.dailyPrice).toFixed(2)}`],
     ["Pickup location", data.pickupLocation],
@@ -61,13 +63,13 @@ const statusCopy = {
 
 export async function sendBookingStatusEmail(data: {
   language: string; status: "CONFIRMED" | "REJECTED"; customerEmail: string; customerName: string;
-  carName: string; startDate: string; endDate: string; totalPrice: number;
+  carName: string; startDate: string; endDate: string; pickupTime: string; returnTime: string; totalPrice: number;
 }) {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) throw new Error("Email service is not configured");
   const transport = nodemailer.createTransport({ service: "gmail", auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD } });
   const language = (["ka", "en", "ru", "ar"].includes(data.language) ? data.language : "en") as keyof typeof statusCopy;
   const message = statusCopy[language][data.status];
   const safe = (value: string | number) => String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] || character);
-  const html = `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#10172f"><h2>GeoRentalCars.com</h2><h1 style="font-size:26px">${safe(message.title)}</h1><p>${safe(message.line)}</p><table style="border-collapse:collapse;width:100%;margin:22px 0"><tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:700">Customer</td><td style="padding:9px;border-bottom:1px solid #ddd">${safe(data.customerName)}</td></tr><tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:700">Car</td><td style="padding:9px;border-bottom:1px solid #ddd">${safe(data.carName)}</td></tr><tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:700">Dates</td><td style="padding:9px;border-bottom:1px solid #ddd">${safe(data.startDate)} — ${safe(data.endDate)}</td></tr><tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:700">Total</td><td style="padding:9px;border-bottom:1px solid #ddd">$${data.totalPrice.toFixed(2)}</td></tr></table></div>`;
+  const html = `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#10172f"><h2>GeoRentalCars.com</h2><h1 style="font-size:26px">${safe(message.title)}</h1><p>${safe(message.line)}</p><table style="border-collapse:collapse;width:100%;margin:22px 0"><tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:700">Customer</td><td style="padding:9px;border-bottom:1px solid #ddd">${safe(data.customerName)}</td></tr><tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:700">Car</td><td style="padding:9px;border-bottom:1px solid #ddd">${safe(data.carName)}</td></tr><tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:700">Dates</td><td style="padding:9px;border-bottom:1px solid #ddd">${safe(data.startDate)} ${safe(data.pickupTime)} — ${safe(data.endDate)} ${safe(data.returnTime)} (Georgia, UTC+4)</td></tr><tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:700">Total</td><td style="padding:9px;border-bottom:1px solid #ddd">$${data.totalPrice.toFixed(2)}</td></tr></table></div>`;
   await transport.sendMail({ from: process.env.GMAIL_USER, to: data.customerEmail, subject: message.subject, html });
 }
