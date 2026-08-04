@@ -8,7 +8,7 @@ const promoSchema = z.object({
   id: z.string().min(1),
   code: z.string().trim().min(2).max(30).transform((value) => value.toUpperCase()),
   companyName: z.string().trim().min(2).max(100),
-  discountPercent: z.number().min(0).max(100),
+  discountPercent: z.number().min(0).max(20),
   isActive: z.boolean(),
 });
 

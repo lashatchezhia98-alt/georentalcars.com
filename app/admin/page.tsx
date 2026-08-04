@@ -16,7 +16,7 @@ export default async function AdminPage() {
   const [settings, pickupLocations, bookings, bookingStats, availableCars, cars, categories, contactSettings, promoCodes] = await Promise.all([
     prisma.siteSettings ? prisma.siteSettings.findUnique({ where: { id: "default" } }).catch(() => null) : null,
     prisma.pickupLocation ? prisma.pickupLocation.findMany({ orderBy: { sortOrder: "asc" } }).catch(() => []) : [],
-    prisma.booking.findMany({ include: { car: true }, orderBy: { createdAt: "desc" }, take: 100 }).catch(() => []),
+    prisma.booking.findMany({ include: { car: true, promoCode: true }, orderBy: { createdAt: "desc" } }).catch(() => []),
     prisma.booking.groupBy({ by: ["status"], _count: { _all: true } }).catch(() => []),
     prisma.car.count({ where: { isAvailable: true } }).catch(() => 0),
     prisma.car.findMany({ include: { photos: { orderBy: { sortOrder: "asc" }, take: 6 } }, orderBy: { createdAt: "asc" } }).catch(() => []),
@@ -56,14 +56,34 @@ export default async function AdminPage() {
       id: location.id, nameKa: location.nameKa, nameEn: location.nameEn, nameRu: location.nameRu, nameAr: location.nameAr,
       fee: Number(location.fee), isActive: location.isActive,
     }))}
-    bookings={bookings.map((booking) => ({
-      id: booking.id,
-      customer: booking.customerName,
-      car: booking.car.name,
-      dates: `${booking.startDate.toISOString().slice(0, 10)} — ${booking.endDate.toISOString().slice(0, 10)}`,
-      status: booking.status,
-      price: `$${Number(booking.totalPrice).toFixed(2)}`,
-    }))}
+    bookings={bookings.map((booking) => {
+      const subtotal = Number(booking.dailyPrice) * booking.totalDays;
+      const commissionBase = subtotal * (1 - Number(booking.discountPercent) / 100);
+      const promoAmount = commissionBase * Number(booking.promoDiscountPercent) / 100;
+      const grossCommission = commissionBase * 0.2;
+      const netCommission = Math.max(0, grossCommission - promoAmount);
+      const fees = Number(booking.pickupFee) + Number(booking.returnFee);
+      const companyRevenue = Number(booking.totalPrice) - netCommission;
+      const money = (value: number) => Math.round(value * 100) / 100;
+      return {
+        id: booking.id,
+        customer: booking.customerName,
+        car: booking.car.name,
+        dates: `${booking.startDate.toISOString().slice(0, 10)} — ${booking.endDate.toISOString().slice(0, 10)}`,
+        createdAt: booking.createdAt.toISOString().slice(0, 10),
+        status: booking.status,
+        totalPrice: money(Number(booking.totalPrice)),
+        promoCode: booking.promoCode?.code || null,
+        promoCompany: booking.promoCode?.companyName || null,
+        promoPercent: Number(booking.promoDiscountPercent),
+        promoAmount: money(promoAmount),
+        commissionBase: money(commissionBase),
+        grossCommission: money(grossCommission),
+        netCommission: money(netCommission),
+        companyRevenue: money(companyRevenue),
+        fees: money(fees),
+      };
+    })}
     stats={{ total: bookings.length, pending: stats.PENDING || 0, confirmed: stats.CONFIRMED || 0, rejected: stats.REJECTED || 0, availableCars }}
     content={localizedContent}
     cars={cars.map((car) => ({

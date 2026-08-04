@@ -1,10 +1,14 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import BrandMark from "@/components/BrandMark";
 import { signOut } from "next-auth/react";
 
 type AdminPickupLocation = { id:string;nameKa:string;nameEn:string;nameRu:string;nameAr:string;fee:number;isActive:boolean };
-type AdminBooking = { id: string; customer: string; car: string; dates: string; status: string; price: string };
+type AdminBooking = {
+  id:string;customer:string;car:string;dates:string;createdAt:string;status:string;totalPrice:number;
+  promoCode:string|null;promoCompany:string|null;promoPercent:number;promoAmount:number;
+  commissionBase:number;grossCommission:number;netCommission:number;companyRevenue:number;fees:number;
+};
 type AdminStats = { total: number; pending: number; confirmed: number; rejected: number; availableCars: number };
 type AdminContent = { heroEyebrow:string;heroTitle:string;heroAccent:string;heroCopy:string;fleetEyebrow:string;fleetTitle:string;fleetCopy:string;aboutEyebrow:string;aboutTitle:string;aboutCopy:string;contactEyebrow:string;contactTitle:string;contactCopy:string;footerTagline:string };
 type ContentLocale = "en"|"ka"|"ru"|"ar";
@@ -16,7 +20,7 @@ type AdminCar = { id:string;name:string;categoryId:string;description:string;dai
 type AdminContact = { address:string;googleMapsUrl:string;phone:string;whatsapp:string };
 
 const sections = [
-  ["მთავარი","⌂"],["ჯავშნები","▤"],["ავტომობილები","◇"],["კატეგორიები","◫"],["საიტის ტექსტები","✎"],
+  ["მთავარი","⌂"],["ჯავშნები","▤"],["ბუღალტერია","$"],["ავტომობილები","◇"],["კატეგორიები","◫"],["საიტის ტექსტები","✎"],
   ["პრომო კოდები","%"],["ქოვერის ფოტო","▧"],["მიღება / დაბრუნება","⌖"],["კონტაქტი","☎"],
 ] as const;
 
@@ -123,6 +127,7 @@ export default function AdminDashboard(props: {
       {message&&<p className="admin-message">{message}</p>}
       {section==="მთავარი"&&<><div className="stat-grid"><article><span>ყველა ჯავშანი</span><strong>{props.stats.total}</strong><small>სულ მიღებული მოთხოვნა</small></article><article><span>მოლოდინში</span><strong>{props.stats.pending}</strong><small>საჭიროებს რეაგირებას</small></article><article><span>დადასტურებული / უარყოფილი</span><strong>{props.stats.confirmed} / {props.stats.rejected}</strong><small>მიმდინარე სტატუსები</small></article><article><span>ხელმისაწვდომი მანქანები</span><strong>{props.stats.availableCars}</strong><small>აქტიური ავტომობილები</small></article></div><BookingsTable bookings={bookings.slice(0,8)} onStatus={updateBooking} busyId={bookingActionId}/></>}
       {section==="ჯავშნები"&&<BookingsTable bookings={bookings} onStatus={updateBooking} busyId={bookingActionId}/>}
+      {section==="ბუღალტერია"&&<Accounting bookings={bookings}/>}
       {section==="საიტის ტექსტები"&&<Panel title="საიტის ტექსტები — ყველა ენა"><div className="content-language-tabs">{([["en","English"],["ka","ქართული"],["ru","Русский"],["ar","العربية"]] as [ContentLocale,string][]).map(([code,label])=><button type="button" className={contentLocale===code?"active":""} key={code} onClick={()=>setContentLocale(code)}>{label}</button>)}</div><p className="content-language-note">თითოეული ენის ტექსტი დამოუკიდებლად იწერება და ავტომატურად არ ითარგმნება.</p><form className="content-form" dir={contentLocale==="ar"?"rtl":"ltr"} onSubmit={e=>{e.preventDefault();patch("/api/admin/content",{locale:contentLocale,content:content[contentLocale]},`${contentLocale.toUpperCase()} ტექსტები შენახულია.`)}}>
         {([
           ["heroEyebrow","მთავარი — ზედა პატარა ტექსტი"],["heroTitle","მთავარი სათაური"],["heroAccent","იასამნისფერი სათაური"],["heroCopy","მთავარი აღწერა"],
@@ -150,7 +155,7 @@ export default function AdminDashboard(props: {
       {section==="პრომო კოდები"&&<Panel title="პრომო კოდების მართვა" button="+ პრომო კოდის დამატება" onButton={()=>setPromoCodes(v=>[{id:`promo-${Date.now()}`,code:"",companyName:"",discountPercent:10,isActive:true},...v])}><div className="promo-editor">{promoCodes.map((promo,index)=><article key={promo.id}>
         <label>კოდი<input value={promo.code} onChange={e=>setPromoCodes(v=>v.map((x,i)=>i===index?{...x,code:e.target.value.toUpperCase()}:x))}/></label>
         <label>კომპანია / აღწერა<input value={promo.companyName} onChange={e=>setPromoCodes(v=>v.map((x,i)=>i===index?{...x,companyName:e.target.value}:x))}/></label>
-        <label>ფასდაკლება %<input type="number" min="0" max="100" value={promo.discountPercent} onChange={e=>setPromoCodes(v=>v.map((x,i)=>i===index?{...x,discountPercent:Number(e.target.value)}:x))}/></label>
+        <label>ფასდაკლება % (მაქს. 20)<input type="number" min="0" max="20" value={promo.discountPercent} onChange={e=>setPromoCodes(v=>v.map((x,i)=>i===index?{...x,discountPercent:Number(e.target.value)}:x))}/></label>
         <label className="toggle"><input type="checkbox" checked={promo.isActive} onChange={e=>setPromoCodes(v=>v.map((x,i)=>i===index?{...x,isActive:e.target.checked}:x))}/> აქტიურია</label>
         <button type="button" onClick={()=>deletePromoCode(promo)}>წაშლა</button>
       </article>)}</div><button className="button save-list" onClick={()=>patch("/api/admin/promo-codes",{promoCodes},"პრომო კოდები შენახულია.")}>პრომო კოდების შენახვა</button></Panel>}
@@ -161,4 +166,41 @@ export default function AdminDashboard(props: {
   </main>;
 }
 function Panel({title,button,onButton,children}:{title:string;button?:string;onButton?:()=>void;children:React.ReactNode}){return <section className="admin-panel"><div className="panel-head"><h2>{title}</h2>{button&&<button type="button" className="button compact" onClick={onButton}>{button}</button>}</div>{children}</section>}
-function BookingsTable({bookings,onStatus,busyId}:{bookings:AdminBooking[];onStatus:(id:string,status:"CONFIRMED"|"REJECTED")=>void;busyId:string}){return <section className="admin-panel"><div className="panel-head"><div><small>მიმდინარე ოპერაციები</small><h2>ბოლო ჯავშნები</h2></div></div><div className="table-wrap"><table><thead><tr><th>ჯავშანი</th><th>მომხმარებელი</th><th>მანქანა</th><th>თარიღები</th><th>ჯამი</th><th>სტატუსი</th><th>მოქმედება</th></tr></thead><tbody>{bookings.length?bookings.map(row=><tr key={row.id}><td><b>{row.id.slice(-8).toUpperCase()}</b></td><td>{row.customer}</td><td>{row.car}</td><td>{row.dates}</td><td>{row.price}</td><td><span className={`status ${row.status.toLowerCase()}`}>{({PENDING:"მოლოდინში",CONFIRMED:"დადასტურებული",REJECTED:"უარყოფილი"} as Record<string,string>)[row.status]||row.status}</span></td><td><div className="booking-actions"><button disabled={Boolean(busyId)} onClick={()=>onStatus(row.id,"CONFIRMED")}>{busyId===row.id?"იგზავნება…":"დადასტურება"}</button><button disabled={Boolean(busyId)} onClick={()=>onStatus(row.id,"REJECTED")}>{busyId===row.id?"იგზავნება…":"უარყოფა"}</button></div></td></tr>):<tr><td colSpan={7}>ჯავშნები ჯერ არ არის.</td></tr>}</tbody></table></div></section>}
+function BookingsTable({bookings,onStatus,busyId}:{bookings:AdminBooking[];onStatus:(id:string,status:"CONFIRMED"|"REJECTED")=>void;busyId:string}){return <section className="admin-panel"><div className="panel-head"><div><small>მიმდინარე ოპერაციები</small><h2>ბოლო ჯავშნები</h2></div></div><div className="table-wrap"><table><thead><tr><th>ჯავშანი</th><th>მომხმარებელი</th><th>მანქანა</th><th>თარიღები</th><th>პრომო</th><th>ჯამი</th><th>სტატუსი</th><th>მოქმედება</th></tr></thead><tbody>{bookings.length?bookings.map(row=><tr key={row.id}><td><b>{row.id.slice(-8).toUpperCase()}</b></td><td>{row.customer}</td><td>{row.car}</td><td>{row.dates}</td><td>{row.promoCode?<span className="promo-used"><b>{row.promoCode}</b><small>{row.promoCompany} · {row.promoPercent}%</small></span>:<span className="promo-none">არ გამოუყენებია</span>}</td><td>${row.totalPrice.toFixed(2)}</td><td><span className={`status ${row.status.toLowerCase()}`}>{({PENDING:"მოლოდინში",CONFIRMED:"დადასტურებული",REJECTED:"უარყოფილი"} as Record<string,string>)[row.status]||row.status}</span></td><td><div className="booking-actions"><button disabled={Boolean(busyId)} onClick={()=>onStatus(row.id,"CONFIRMED")}>{busyId===row.id?"იგზავნება…":"დადასტურება"}</button><button disabled={Boolean(busyId)} onClick={()=>onStatus(row.id,"REJECTED")}>{busyId===row.id?"იგზავნება…":"უარყოფა"}</button></div></td></tr>):<tr><td colSpan={8}>ჯავშნები ჯერ არ არის.</td></tr>}</tbody></table></div></section>}
+
+function Accounting({bookings}:{bookings:AdminBooking[]}){
+  const today=new Date().toISOString().slice(0,10);
+  const monthStart=`${today.slice(0,7)}-01`;
+  const [from,setFrom]=useState(monthStart);
+  const [to,setTo]=useState(today);
+  const filtered=useMemo(()=>bookings.filter(row=>(!from||row.createdAt>=from)&&(!to||row.createdAt<=to)),[bookings,from,to]);
+  const confirmed=filtered.filter(row=>row.status==="CONFIRMED");
+  const promoBookings=confirmed.filter(row=>row.promoCode);
+  const sum=(key:keyof Pick<AdminBooking,"totalPrice"|"promoAmount"|"grossCommission"|"netCommission"|"companyRevenue"|"fees">)=>confirmed.reduce((total,row)=>total+row[key],0);
+  const money=(value:number)=>`$${value.toFixed(2)}`;
+  const companies=useMemo(()=>{
+    const result=new Map<string,{company:string;code:string;uses:number;discount:number;revenue:number}>();
+    for(const row of promoBookings){
+      const key=`${row.promoCompany||"—"}::${row.promoCode||"—"}`;
+      const current=result.get(key)||{company:row.promoCompany||"—",code:row.promoCode||"—",uses:0,discount:0,revenue:0};
+      current.uses+=1;current.discount+=row.promoAmount;current.revenue+=row.totalPrice;result.set(key,current);
+    }
+    return [...result.values()].sort((a,b)=>b.uses-a.uses);
+  },[promoBookings]);
+  return <>
+    <section className="admin-panel accounting-filter"><div><small>საანგარიშო პერიოდი</small><h2>ბუღალტერიის ანგარიში</h2></div><label>დან<input type="date" value={from} onChange={e=>setFrom(e.target.value)}/></label><label>მდე<input type="date" value={to} min={from} onChange={e=>setTo(e.target.value)}/></label><button type="button" onClick={()=>{setFrom("");setTo("")}}>მთელი პერიოდი</button></section>
+    <div className="accounting-stats">
+      <article><span>შემოსული ჯავშნები</span><strong>{filtered.length}</strong><small>არჩეულ პერიოდში</small></article>
+      <article><span>დადასტურებული</span><strong>{confirmed.length}</strong><small>ფინანსურ ანგარიშში შესული</small></article>
+      <article><span>პრომოს გამოყენება</span><strong>{promoBookings.length}</strong><small>მხოლოდ დადასტურებული</small></article>
+      <article><span>კლიენტების გადახდილი</span><strong>{money(sum("totalPrice"))}</strong><small>ქირა და ყველა საფასური</small></article>
+      <article><span>თქვენი საწყისი 20%</span><strong>{money(sum("grossCommission"))}</strong><small>პრომოს ჩამოკლებამდე</small></article>
+      <article><span>პრომოების ხარჯი</span><strong>−{money(sum("promoAmount"))}</strong><small>თქვენი 20%-დან</small></article>
+      <article className="primary"><span>თქვენი წმინდა შემოსავალი</span><strong>{money(sum("netCommission"))}</strong><small>20% მინუს პრომო</small></article>
+      <article><span>კომპანიის შემოსავალი</span><strong>{money(sum("companyRevenue"))}</strong><small>მიღება/დაბრუნების ჩათვლით</small></article>
+      <article><span>მიღება / დაბრუნება</span><strong>{money(sum("fees"))}</strong><small>სრულად კომპანიისაა</small></article>
+    </div>
+    <section className="admin-panel"><div className="panel-head"><div><small>პარტნიორების ანგარიში</small><h2>პრომო კოდების გამოყენება კომპანიების მიხედვით</h2></div></div><div className="table-wrap"><table><thead><tr><th>კომპანია</th><th>პრომო კოდი</th><th>გამოყენება</th><th>ფასდაკლების ჯამი</th><th>ჯავშნების მიღებული თანხა</th></tr></thead><tbody>{companies.length?companies.map(row=><tr key={`${row.company}-${row.code}`}><td><b>{row.company}</b></td><td>{row.code}</td><td>{row.uses}</td><td>{money(row.discount)}</td><td>{money(row.revenue)}</td></tr>):<tr><td colSpan={5}>არჩეულ პერიოდში დადასტურებულ ჯავშნებზე პრომო კოდი არ გამოყენებულა.</td></tr>}</tbody></table></div></section>
+    <section className="admin-panel"><div className="panel-head"><div><small>დეტალური კალკულაცია</small><h2>დადასტურებული ჯავშნები</h2></div></div><div className="table-wrap"><table><thead><tr><th>ჯავშანი</th><th>თარიღი</th><th>კლიენტი</th><th>საკომისიოს ბაზა</th><th>20%</th><th>პრომო</th><th>თქვენი წმინდა</th><th>კომპანია</th></tr></thead><tbody>{confirmed.length?confirmed.map(row=><tr key={row.id}><td><b>{row.id.slice(-8).toUpperCase()}</b></td><td>{row.createdAt}</td><td>{row.customer}</td><td>{money(row.commissionBase)}</td><td>{money(row.grossCommission)}</td><td>{row.promoCode?`${row.promoCode} (−${money(row.promoAmount)})`:"—"}</td><td><b>{money(row.netCommission)}</b></td><td>{money(row.companyRevenue)}</td></tr>):<tr><td colSpan={8}>არჩეულ პერიოდში დადასტურებული ჯავშნები არ არის.</td></tr>}</tbody></table></div></section>
+  </>;
+}
