@@ -18,13 +18,27 @@ export async function PATCH(request: Request) {
   const parsed = z.object({ promoCodes: z.array(promoSchema).max(100) }).safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message || "პრომო-კოდის მონაცემები არასწორია." }, { status: 400 });
   try {
-    for (const promo of parsed.data.promoCodes) {
-      await prisma.promoCode.upsert({ where: { id: promo.id }, update: promo, create: promo });
-    }
+    await prisma.$transaction(parsed.data.promoCodes.map((promo) =>
+      prisma.promoCode.upsert({
+        where: { id: promo.id },
+        update: promo,
+        create: { ...promo, isActive: true },
+      }),
+    ));
   } catch {
     return NextResponse.json({ error: "პრომო-კოდი უნიკალური უნდა იყოს." }, { status: 409 });
   }
-  return NextResponse.json({ ok: true });
+  const promoCodes = await prisma.promoCode.findMany({ orderBy: { createdAt: "desc" } });
+  return NextResponse.json({
+    ok: true,
+    promoCodes: promoCodes.map((promo) => ({
+      id: promo.id,
+      code: promo.code,
+      companyName: promo.companyName,
+      discountPercent: Number(promo.discountPercent),
+      isActive: promo.isActive,
+    })),
+  });
 }
 
 export async function DELETE(request: Request) {

@@ -129,6 +129,15 @@ export default function AdminDashboard(props: {
       setPromoCodes(rows=>rows.filter(item=>item.id!==promo.id));setMessage("შეუნახავი პრომო-კოდი წაიშალა.");
     }else setMessage(data.error||"პრომო-კოდის წაშლა ვერ მოხერხდა.");
   };
+  const savePromoCodes=async()=>{
+    setMessage("პრომო კოდები ინახება…");
+    const response=await fetch("/api/admin/promo-codes",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({promoCodes})});
+    const data=await response.json().catch(()=>({}));
+    if(response.ok){
+      if(Array.isArray(data.promoCodes))setPromoCodes(data.promoCodes);
+      setMessage("პრომო კოდები შენახულია — ახალი კოდები უკვე აქტიურია საიტზე.");
+    }else setMessage(data.error||"პრომო კოდების შენახვა ვერ მოხერხდა.");
+  };
   return <main className="admin-shell">
     <aside>
       <a className="brand admin-brand" href="/"><BrandMark/><span className="brand-name">Geo<span>Rental</span>Cars</span></a>
@@ -171,7 +180,7 @@ export default function AdminDashboard(props: {
         <label>ფასდაკლება % (მაქს. 20)<input type="number" min="0" max="20" value={promo.discountPercent} onChange={e=>setPromoCodes(v=>v.map((x,i)=>i===index?{...x,discountPercent:Number(e.target.value)}:x))}/></label>
         <label className="toggle"><input type="checkbox" checked={promo.isActive} onChange={e=>setPromoCodes(v=>v.map((x,i)=>i===index?{...x,isActive:e.target.checked}:x))}/> აქტიურია</label>
         <button type="button" onClick={()=>deletePromoCode(promo)}>წაშლა</button>
-      </article>)}</div><button className="button save-list" onClick={()=>patch("/api/admin/promo-codes",{promoCodes},"პრომო კოდები შენახულია.")}>პრომო კოდების შენახვა</button></Panel>}
+      </article>)}</div><button className="button save-list" onClick={savePromoCodes}>პრომო კოდების შენახვა და გააქტიურება</button></Panel>}
       {section==="ფასდაკლების გამოთვლის ლოგიკა"&&<Panel title="ფასდაკლების გამოთვლის ლოგიკა"><p className="discount-help">ფასდაკლება იწყება მითითებული დღიდან. შემდეგ ყოველ დამატებულ დღეზე ემატება თქვენ მიერ განსაზღვრული პროცენტი, მაგრამ 30-ე დღის შემდეგ აღარ იზრდება და მაქსიმალურ ზღვარს არ სცდება.</p><form className="discount-settings-form" onSubmit={e=>{e.preventDefault();patch("/api/admin/discount-settings",discountSettings,"ფასდაკლების გამოთვლის ლოგიკა შენახულია.")}}>
         <label>ფასდაკლების დაწყების დღე<input type="number" min="1" max="30" required value={discountSettings.startDay} onChange={e=>setDiscountSettings({...discountSettings,startDay:Number(e.target.value)})}/></label>
         <label>საწყისი ფასდაკლება (%)<input type="number" min="0" max="100" step="0.01" required value={discountSettings.basePercent} onChange={e=>setDiscountSettings({...discountSettings,basePercent:Number(e.target.value)})}/></label>
