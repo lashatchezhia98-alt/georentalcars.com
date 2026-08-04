@@ -51,6 +51,7 @@ export default async function AdminPage() {
   };
   return <AdminDashboard
     email={session.user.email}
+    role={(session.user as { role?:string }).role || "LIMITED"}
     coverUrl={settings?.heroImageUrl || "/hero-wrangler-climb.png"}
     pickupLocations={pickupLocations.map((location) => ({
       id: location.id, nameKa: location.nameKa, nameEn: location.nameEn, nameRu: location.nameRu, nameAr: location.nameAr,

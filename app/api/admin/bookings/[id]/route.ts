@@ -13,8 +13,12 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   const parsed = schema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   const { id } = await context.params;
-  const booking = await prisma.booking.findUnique({ where: { id }, include: { car: true } });
+  const booking = await prisma.booking.findUnique({ where: { id }, include: { car: { include: { category: true } }, promoCode: true } });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+  const role = (session.user as { role?: string }).role || "LIMITED";
+  if (booking.status === "CONFIRMED" && parsed.data.status === "REJECTED" && role !== "FULL") {
+    return NextResponse.json({ error: "დადასტურებული ჯავშნის უარყოფა მხოლოდ მთავარ მფლობელს შეუძლია." }, { status: 403 });
+  }
   if (booking.status === parsed.data.status && booking.statusEmailSentFor === parsed.data.status) {
     return NextResponse.json({ id: booking.id, status: booking.status, emailSent: true, duplicate: true });
   }
@@ -38,11 +42,27 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       status: parsed.data.status,
       customerEmail: booking.customerEmail,
       customerName: booking.customerName,
+      customerPhone: booking.customerPhone,
+      birthDate: booking.birthDate.toISOString().slice(0,10),
+      flightNumber: booking.flightNumber || "—",
+      passportNumber: booking.passportNumber || "—",
+      driverLicenseNumber: booking.driverLicenseNumber || "—",
+      driverLicenseExpiry: booking.driverLicenseExpiry?.toISOString().slice(0,10) || "—",
       carName: booking.car.name,
+      carCategory: booking.car.category.name,
       startDate: booking.startDate.toISOString().slice(0, 10),
       endDate: booking.endDate.toISOString().slice(0, 10),
       pickupTime: booking.pickupTime || "—",
       returnTime: booking.returnTime || "—",
+      pickupLocation: booking.pickupLocation,
+      pickupFee: Number(booking.pickupFee),
+      returnLocation: booking.returnLocation,
+      returnFee: Number(booking.returnFee),
+      totalDays: booking.totalDays,
+      dailyPrice: Number(booking.dailyPrice),
+      rentalDiscount: Number(booking.discountPercent),
+      promoCode: booking.promoCode?.code || "—",
+      promoDiscount: Number(booking.promoDiscountPercent),
       totalPrice: Number(booking.totalPrice),
     });
   } catch {

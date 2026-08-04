@@ -12,32 +12,16 @@ export async function sendBookingEmails(data: Record<string, string | number>) {
   const language = (data.language as keyof typeof copy) || "ka";
   const safe = (value: string | number) => String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] || character);
   const rows: Array<[string, string | number]> = [
-    ["Customer", data.customerName],
-    ["Phone / WhatsApp", data.customerPhone],
-    ["Email", data.customerEmail],
-    ["Date of birth", data.birthDate],
-    ["Flight number", data.flightNumber],
-    ["Passport number", data.passportNumber],
-    ["Driver’s license number", data.driverLicenseNumber],
-    ["Driver’s license expiry", data.driverLicenseExpiry],
     ["Car", `${data.carName} — ${data.carCategory}`],
     ["Rental dates", `${data.startDate} — ${data.endDate}`],
     ["Pickup time (Georgia, UTC+4)", data.pickupTime],
     ["Return time (Georgia, UTC+4)", data.returnTime],
-    ["Total days", data.totalDays],
-    ["Daily price", `$${Number(data.dailyPrice).toFixed(2)}`],
     ["Pickup location", data.pickupLocation],
-    ["Pickup fee", `$${Number(data.pickupFee).toFixed(2)}`],
     ["Return location", data.returnLocation],
-    ["Return fee", `$${Number(data.returnFee).toFixed(2)}`],
-    ["Rental discount", `${data.rentalDiscount}%`],
-    ["Promo code", data.promoCode],
-    ["Promo discount", `${data.promoDiscount}%`],
-    ["Total price", `$${Number(data.totalPrice).toFixed(2)}`],
   ];
   const summary = `<h2>GeoRentalCars.com</h2><table style="border-collapse:collapse;width:100%;max-width:680px">${rows.map(([label, value]) => `<tr><td style="border-bottom:1px solid #ddd;padding:8px;font-weight:600">${safe(label)}</td><td style="border-bottom:1px solid #ddd;padding:8px">${safe(value)}</td></tr>`).join("")}</table>`;
   await Promise.all([
-    transport.sendMail({ from: process.env.GMAIL_USER, to: process.env.ADMIN_BOOKING_EMAIL || "lashachezhia@gmail.com", subject: `New booking — ${data.customerName}`, html: `${summary}<p>${data.customerPhone} · ${data.customerEmail}</p>` }),
+    transport.sendMail({ from: process.env.GMAIL_USER, to: process.env.ADMIN_BOOKING_EMAIL || "lashachezhia@gmail.com", subject: `New booking request — ${data.carName}`, html: summary }),
     transport.sendMail({ from: process.env.GMAIL_USER, to: String(data.customerEmail), subject: copy[language].subject, html: `${summary}<p>${copy[language].line}</p>` }),
   ]);
 }
@@ -63,13 +47,30 @@ const statusCopy = {
 
 export async function sendBookingStatusEmail(data: {
   language: string; status: "CONFIRMED" | "REJECTED"; customerEmail: string; customerName: string;
-  carName: string; startDate: string; endDate: string; pickupTime: string; returnTime: string; totalPrice: number;
+  customerPhone:string;birthDate:string;flightNumber:string;passportNumber:string;driverLicenseNumber:string;driverLicenseExpiry:string;
+  carName:string;carCategory:string;startDate:string;endDate:string;pickupTime:string;returnTime:string;
+  pickupLocation:string;pickupFee:number;returnLocation:string;returnFee:number;totalDays:number;dailyPrice:number;
+  rentalDiscount:number;promoCode:string;promoDiscount:number;totalPrice:number;
 }) {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) throw new Error("Email service is not configured");
   const transport = nodemailer.createTransport({ service: "gmail", auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD } });
   const language = (["ka", "en", "ru", "ar"].includes(data.language) ? data.language : "en") as keyof typeof statusCopy;
   const message = statusCopy[language][data.status];
   const safe = (value: string | number) => String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] || character);
-  const html = `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#10172f"><h2>GeoRentalCars.com</h2><h1 style="font-size:26px">${safe(message.title)}</h1><p>${safe(message.line)}</p><table style="border-collapse:collapse;width:100%;margin:22px 0"><tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:700">Customer</td><td style="padding:9px;border-bottom:1px solid #ddd">${safe(data.customerName)}</td></tr><tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:700">Car</td><td style="padding:9px;border-bottom:1px solid #ddd">${safe(data.carName)}</td></tr><tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:700">Dates</td><td style="padding:9px;border-bottom:1px solid #ddd">${safe(data.startDate)} ${safe(data.pickupTime)} — ${safe(data.endDate)} ${safe(data.returnTime)} (Georgia, UTC+4)</td></tr><tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:700">Total</td><td style="padding:9px;border-bottom:1px solid #ddd">$${data.totalPrice.toFixed(2)}</td></tr></table></div>`;
-  await transport.sendMail({ from: process.env.GMAIL_USER, to: data.customerEmail, subject: message.subject, html });
+  const fullRows: Array<[string,string|number]> = [
+    ["Customer",data.customerName],["Phone / WhatsApp",data.customerPhone],["Email",data.customerEmail],
+    ["Date of birth",data.birthDate],["Flight number",data.flightNumber],["Passport number",data.passportNumber],
+    ["Driver’s license number",data.driverLicenseNumber],["Driver’s license expiry",data.driverLicenseExpiry],
+    ["Car",`${data.carName} — ${data.carCategory}`],["Rental dates",`${data.startDate} ${data.pickupTime} — ${data.endDate} ${data.returnTime} (Georgia, UTC+4)`],
+    ["Total days",data.totalDays],["Daily price",`$${data.dailyPrice.toFixed(2)}`],["Pickup location",data.pickupLocation],
+    ["Pickup fee",`$${data.pickupFee.toFixed(2)}`],["Return location",data.returnLocation],["Return fee",`$${data.returnFee.toFixed(2)}`],
+    ["Rental discount",`${data.rentalDiscount}%`],["Promo code",data.promoCode],["Promo discount",`${data.promoDiscount}%`],
+    ["Total price",`$${data.totalPrice.toFixed(2)}`],
+  ];
+  const rows=data.status==="CONFIRMED"?fullRows:fullRows.filter(([label])=>["Customer","Car","Rental dates"].includes(label));
+  const table=`<table style="border-collapse:collapse;width:100%;margin:22px 0">${rows.map(([label,value])=>`<tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:700">${safe(label)}</td><td style="padding:9px;border-bottom:1px solid #ddd">${safe(value)}</td></tr>`).join("")}</table>`;
+  const html=`<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#10172f"><h2>GeoRentalCars.com</h2><h1 style="font-size:26px">${safe(message.title)}</h1><p>${safe(message.line)}</p>${table}</div>`;
+  const messages=[transport.sendMail({from:process.env.GMAIL_USER,to:data.customerEmail,subject:message.subject,html})];
+  if(data.status==="CONFIRMED")messages.push(transport.sendMail({from:process.env.GMAIL_USER,to:process.env.ADMIN_BOOKING_EMAIL||"lashachezhia@gmail.com",subject:`Confirmed booking — ${data.customerName}`,html}));
+  await Promise.all(messages);
 }
