@@ -73,6 +73,12 @@ const promoLabels = {
   ru: { checking: "Проверка…", valid: "Промокод применён", invalid: "Промокод недействителен или неактивен" },
   ar: { checking: "جارٍ التحقق…", valid: "تم تطبيق الرمز الترويجي", invalid: "الرمز الترويجي غير صالح أو غير نشط" },
 };
+const summaryLabels = {
+  ka: { rentalDiscount: "ხანგრძლივობის ფასდაკლება", promoDiscount: "პრომო-კოდის ფასდაკლება", pickupFee: "მიწოდების საფასური", returnFee: "დაბრუნების საფასური", free: "უფასო" },
+  en: { rentalDiscount: "Rental duration discount", promoDiscount: "Promo code discount", pickupFee: "Pickup fee", returnFee: "Return fee", free: "Free" },
+  ru: { rentalDiscount: "Скидка за срок аренды", promoDiscount: "Скидка по промокоду", pickupFee: "Стоимость подачи", returnFee: "Стоимость возврата", free: "Бесплатно" },
+  ar: { rentalDiscount: "خصم مدة الإيجار", promoDiscount: "خصم الرمز الترويجي", pickupFee: "رسوم الاستلام", returnFee: "رسوم الإرجاع", free: "مجاني" },
+};
 
 function dateDays(start: string, end: string) {
   if (!start || !end) return 0;
@@ -141,7 +147,10 @@ export default function RentalExperience({
   const pickupFee = selectedPickup?.fee || 0;
   const returnFee = selectedReturn?.fee || 0;
   const subtotal = days * selectedCar.price;
-  const rentalTotal = subtotal * (1 - discount / 100) * (1 - promoDiscount / 100);
+  const durationDiscountAmount = subtotal * discount / 100;
+  const afterDurationDiscount = subtotal - durationDiscountAmount;
+  const promoDiscountAmount = afterDurationDiscount * promoDiscount / 100;
+  const rentalTotal = afterDurationDiscount - promoDiscountAmount;
   const total = rentalTotal + pickupFee + returnFee;
   const pickupName = (location: PickupLocation) => ({ ka: location.nameKa, en: location.nameEn, ru: location.nameRu, ar: location.nameAr })[locale];
   const hasConflict = useMemo(() => Boolean(start && end && end < start), [start, end]);
@@ -377,7 +386,14 @@ export default function RentalExperience({
             <input type="hidden" name="requestToken" value={requestToken} /><input type="hidden" name="carId" value={selectedCar.id} /><input type="hidden" name="language" value={locale} />
             {hasConflict && <p className="error">{t.booking.conflict}</p>}
             {submitError && <p className="error">{submitError}</p>}
-            <div className="summary"><div><span>{days || "—"} {t.booking.days}</span><span>${subtotal.toFixed(2)}</span></div><div><span>{t.booking.discount} ({discount + promoDiscount}%)</span><span>−${(subtotal - rentalTotal).toFixed(2)}</span></div><div><span>{locale === "ka" ? "მიწოდების საფასური" : "Pickup fee"}</span><span>{pickupFee ? `+$${pickupFee.toFixed(2)}` : locale === "ka" ? "უფასო" : "Free"}</span></div><div><span>{locale === "ka" ? "დაბრუნების საფასური" : "Return fee"}</span><span>{returnFee ? `+$${returnFee.toFixed(2)}` : locale === "ka" ? "უფასო" : "Free"}</span></div><div className="total"><strong>{t.booking.total}</strong><strong>${total.toFixed(2)}</strong></div></div>
+            <div className="summary">
+              <div><span>{days || "—"} {t.booking.days}</span><span>${subtotal.toFixed(2)}</span></div>
+              <div><span>{summaryLabels[locale].rentalDiscount} ({discount}%)</span><span>−${durationDiscountAmount.toFixed(2)}</span></div>
+              {promoStatus==="valid"&&<div className="promo-summary"><span>{summaryLabels[locale].promoDiscount} — {promo.trim().toUpperCase()} ({promoDiscount}%)</span><span>−${promoDiscountAmount.toFixed(2)}</span></div>}
+              <div><span>{summaryLabels[locale].pickupFee}</span><span>{pickupFee ? `+$${pickupFee.toFixed(2)}` : summaryLabels[locale].free}</span></div>
+              <div><span>{summaryLabels[locale].returnFee}</span><span>{returnFee ? `+$${returnFee.toFixed(2)}` : summaryLabels[locale].free}</span></div>
+              <div className="total"><strong>{t.booking.total}</strong><strong>${total.toFixed(2)}</strong></div>
+            </div>
             <button className="button full-button" disabled={!days || hasConflict || submitting || promoStatus==="checking" || promoStatus==="invalid"}>{submitting?sendingLabels[locale]:`${t.booking.submit} ↗`}</button>
           </form>}
         </section>
