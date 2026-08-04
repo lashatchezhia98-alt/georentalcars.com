@@ -57,3 +57,16 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   });
   return NextResponse.json({ id: updated.id, status: updated.status, emailSent: true });
 }
+
+export async function DELETE(_request: Request, context: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { id } = await context.params;
+  const booking = await prisma.booking.findUnique({ where: { id }, select: { status: true } });
+  if (!booking) return NextResponse.json({ error: "ჯავშანი ვერ მოიძებნა." }, { status: 404 });
+  if (booking.status !== "REJECTED") {
+    return NextResponse.json({ error: "ხელით მხოლოდ უარყოფილი ჯავშნის წაშლა შეიძლება." }, { status: 409 });
+  }
+  await prisma.booking.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}
