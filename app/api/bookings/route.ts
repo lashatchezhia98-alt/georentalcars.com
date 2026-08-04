@@ -20,6 +20,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid booking details", fields: parsed.error.flatten() }, { status: 400 });
   }
   const data = parsed.data;
+  const normalizedPromoCode = data.promoCode?.trim().toUpperCase() || undefined;
   const existingRequest = await prisma.booking.findUnique({ where: { requestToken: data.requestToken } });
   if (existingRequest) {
     return NextResponse.json({ id: existingRequest.id, status: existingRequest.status, duplicate: true }, { status: 200 });
@@ -49,8 +50,8 @@ export async function POST(request: Request) {
     prisma.pickupLocation.findFirst({ where: { id: data.pickupLocation, isActive: true } }),
     prisma.pickupLocation.findFirst({ where: { id: data.returnLocation, isActive: true } }),
     prisma.discountSettings.findUnique({ where: { id: "default" } }),
-    data.promoCode
-      ? prisma.promoCode.findFirst({ where: { code: data.promoCode.toUpperCase(), isActive: true } })
+    normalizedPromoCode
+      ? prisma.promoCode.findFirst({ where: { code: normalizedPromoCode, isActive: true } })
       : Promise.resolve(null),
     prisma.booking.findFirst({
       where: { carId: data.carId, status: "CONFIRMED", startDate: { lte: end }, endDate: { gte: start } },
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
   if (!pickup) return NextResponse.json({ error: "Pickup location not found" }, { status: 404 });
   if (!returnLocation) return NextResponse.json({ error: "Return location not found" }, { status: 404 });
   if (conflict) return NextResponse.json({ error: "This car is unavailable for the selected dates" }, { status: 409 });
-  if (data.promoCode && !promo) return NextResponse.json({ error: "Promo code is invalid or inactive" }, { status: 400 });
+  if (normalizedPromoCode && !promo) return NextResponse.json({ error: "Promo code is invalid or inactive" }, { status: 400 });
 
   const rentalDiscount = durationDiscount(days, discountSettings ? {
     startDay: discountSettings.startDay,
@@ -140,7 +141,7 @@ export async function POST(request: Request) {
     pickupFee,
     returnLocation: returnLocation.nameEn,
     returnFee,
-    promoCode: data.promoCode || "—",
+    promoCode: normalizedPromoCode || "—",
     totalPrice,
   }).catch(() => undefined);
 

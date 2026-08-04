@@ -66,6 +66,12 @@ const galleryLabels = {
   ar: { view: "عرض التفاصيل", details: "تفاصيل السيارة", previous: "الصورة السابقة", next: "الصورة التالية", book: "احجز السيارة" },
 };
 const sendingLabels = { ka: "იგზავნება…", en: "Sending…", ru: "Отправляется…", ar: "جارٍ الإرسال…" };
+const promoLabels = {
+  ka: { checking: "მოწმდება…", valid: "პრომო კოდი გააქტიურდა", invalid: "პრომო კოდი არასწორია ან არააქტიურია" },
+  en: { checking: "Checking…", valid: "Promo code applied", invalid: "Promo code is invalid or inactive" },
+  ru: { checking: "Проверка…", valid: "Промокод применён", invalid: "Промокод недействителен или неактивен" },
+  ar: { checking: "جارٍ التحقق…", valid: "تم تطبيق الرمز الترويجي", invalid: "الرمز الترويجي غير صالح أو غير نشط" },
+};
 
 function dateDays(start: string, end: string) {
   if (!start || !end) return 0;
@@ -107,6 +113,8 @@ export default function RentalExperience({
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [promo, setPromo] = useState("");
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoStatus, setPromoStatus] = useState<"idle"|"checking"|"valid"|"invalid">("idle");
   const [pickupId, setPickupId] = useState(pickupLocations[0]?.id || "office-tbilisi");
   const [returnId, setReturnId] = useState(pickupLocations[0]?.id || "office-tbilisi");
   const [sent, setSent] = useState(false);
@@ -125,7 +133,6 @@ export default function RentalExperience({
   const visibleCars = category === "All" ? cars : cars.filter((car) => car.category === category);
   const days = dateDays(start, end);
   const discount = durationDiscount(days);
-  const promoDiscount = 0;
   const selectedPickup = pickupLocations.find((location) => location.id === pickupId) || pickupLocations[0];
   const selectedReturn = pickupLocations.find((location) => location.id === returnId) || pickupLocations[0];
   const pickupFee = selectedPickup?.fee || 0;
@@ -143,6 +150,27 @@ export default function RentalExperience({
     const savedLocale = window.localStorage.getItem("georentalcars-locale");
     if (savedLocale && ["ka", "en", "ru", "ar"].includes(savedLocale)) setLocale(savedLocale as Locale);
   }, []);
+
+  useEffect(() => {
+    const code = promo.trim().toUpperCase();
+    setPromoDiscount(0);
+    if (!code) { setPromoStatus("idle"); return; }
+    setPromoStatus("checking");
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/promo-codes/validate?code=${encodeURIComponent(code)}`, { signal: controller.signal });
+        const result = await response.json();
+        if (response.ok && result.valid) {
+          setPromoDiscount(Number(result.discountPercent) || 0);
+          setPromoStatus("valid");
+        } else setPromoStatus("invalid");
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") setPromoStatus("invalid");
+      }
+    }, 350);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [promo]);
 
   useEffect(() => {
     document.body.style.overflow = bookingOpen || detailsOpen ? "hidden" : "";
@@ -341,13 +369,13 @@ export default function RentalExperience({
               <label>{identityLabels[locale].returnTime}<input required name="returnTime" type="time" /></label>
               <label>{t.booking.pickup}<select required name="pickupLocation" value={pickupId} onChange={(event) => setPickupId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></label>
               <label>{identityLabels[locale].returnLocation}<select required name="returnLocation" value={returnId} onChange={(event) => setReturnId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></label>
-              <label className="full">{identityLabels[locale].promoCode}<input name="promoCode" value={promo} onChange={(e) => setPromo(e.target.value)} autoComplete="off" /></label>
+              <label className="full">{identityLabels[locale].promoCode}<input name="promoCode" value={promo} onChange={(e) => setPromo(e.target.value.toUpperCase())} autoComplete="off" />{promoStatus!=="idle"&&<small className={`promo-feedback ${promoStatus}`}>{promoLabels[locale][promoStatus]}</small>}</label>
             </div>
             <input type="hidden" name="requestToken" value={requestToken} /><input type="hidden" name="carId" value={selectedCar.id} /><input type="hidden" name="language" value={locale} />
             {hasConflict && <p className="error">{t.booking.conflict}</p>}
             {submitError && <p className="error">{submitError}</p>}
             <div className="summary"><div><span>{days || "—"} {t.booking.days}</span><span>${subtotal.toFixed(2)}</span></div><div><span>{t.booking.discount} ({discount + promoDiscount}%)</span><span>−${(subtotal - rentalTotal).toFixed(2)}</span></div><div><span>{locale === "ka" ? "მიწოდების საფასური" : "Pickup fee"}</span><span>{pickupFee ? `+$${pickupFee.toFixed(2)}` : locale === "ka" ? "უფასო" : "Free"}</span></div><div><span>{locale === "ka" ? "დაბრუნების საფასური" : "Return fee"}</span><span>{returnFee ? `+$${returnFee.toFixed(2)}` : locale === "ka" ? "უფასო" : "Free"}</span></div><div className="total"><strong>{t.booking.total}</strong><strong>${total.toFixed(2)}</strong></div></div>
-            <button className="button full-button" disabled={!days || hasConflict || submitting}>{submitting?sendingLabels[locale]:`${t.booking.submit} ↗`}</button>
+            <button className="button full-button" disabled={!days || hasConflict || submitting || promoStatus==="checking" || promoStatus==="invalid"}>{submitting?sendingLabels[locale]:`${t.booking.submit} ↗`}</button>
           </form>}
         </section>
       </div>}
