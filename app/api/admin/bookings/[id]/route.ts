@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendBookingStatusEmail } from "@/lib/email";
+import { createDirectCancellationUrl } from "@/lib/cancellation-link";
 
 const schema = z.object({ status: z.enum(["CONFIRMED", "REJECTED"]) });
 
@@ -15,6 +17,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   const { id } = await context.params;
   const booking = await prisma.booking.findUnique({ where: { id }, include: { car: { include: { category: true } }, promoCode: true } });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+  if (booking.status === "CANCELLED_BY_CUSTOMER" || booking.returnedAt) {
+    return NextResponse.json({ error: "გაუქმებული ან დასრულებული ჯავშნის სტატუსის შეცვლა შეუძლებელია." }, { status: 409 });
+  }
   const role = (session.user as { role?: string }).role || "LIMITED";
   if (booking.status === "CONFIRMED" && parsed.data.status === "REJECTED" && role !== "FULL") {
     return NextResponse.json({ error: "დადასტურებული ჯავშნის უარყოფა მხოლოდ მთავარ მფლობელს შეუძლია." }, { status: 403 });
@@ -22,23 +27,41 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   if (booking.status === parsed.data.status && booking.statusEmailSentFor === parsed.data.status) {
     return NextResponse.json({ id: booking.id, status: booking.status, emailSent: true, duplicate: true });
   }
-  if (parsed.data.status === "CONFIRMED") {
-    const conflict = await prisma.booking.findFirst({
-      where: { id: { not: id }, carId: booking.carId, status: "CONFIRMED", startDate: { lte: booking.endDate }, endDate: { gte: booking.startDate } },
-      select: { id: true },
-    });
-    if (conflict) return NextResponse.json({ error: "This car already has a confirmed booking for these dates" }, { status: 409 });
+  let updated;
+  try {
+    updated = await prisma.$transaction(async (tx) => {
+      if (parsed.data.status === "CONFIRMED") {
+        const conflict = await tx.booking.findFirst({
+          where: { id: { not: id }, carId: booking.carId, status: "CONFIRMED", startDate: { lte: booking.endDate }, endDate: { gte: booking.startDate } },
+          select: { id: true },
+        });
+        if (conflict) throw new Error("booking-conflict");
+      }
+      return tx.booking.update({
+        where: { id },
+        data: {
+          status: parsed.data.status,
+          ...(booking.status !== parsed.data.status ? { statusEmailSentFor: null, statusEmailSentAt: null } : {}),
+        },
+      });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5_000, timeout: 10_000 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "booking-conflict") {
+      return NextResponse.json({ error: "This car already has a confirmed booking for these dates" }, { status: 409 });
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
+      return NextResponse.json({ error: "Another booking update is in progress. Please try again." }, { status: 409 });
+    }
+    throw error;
   }
-  const updated = await prisma.booking.update({
-    where: { id },
-    data: {
-      status: parsed.data.status,
-      ...(booking.status !== parsed.data.status ? { statusEmailSentFor: null, statusEmailSentAt: null } : {}),
-    },
-  });
+  const cancellationPageUrl = parsed.data.status === "CONFIRMED"
+    ? await createDirectCancellationUrl({ id: booking.id, startDate: booking.startDate, pickupTime: booking.pickupTime })
+    : `${process.env.NEXTAUTH_URL || "https://georentalcars.com"}/cancel-booking`;
   try {
     await sendBookingStatusEmail({
       language: booking.customerLanguage,
+      bookingCode: booking.bookingCode,
+      cancellationPageUrl,
       status: parsed.data.status,
       customerEmail: booking.customerEmail,
       customerName: booking.customerName,
@@ -47,7 +70,6 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       flightNumber: booking.flightNumber || "—",
       passportNumber: booking.passportNumber || "—",
       driverLicenseNumber: booking.driverLicenseNumber || "—",
-      driverLicenseExpiry: booking.driverLicenseExpiry?.toISOString().slice(0,10) || "—",
       carName: booking.car.name,
       carCategory: booking.car.category.name,
       startDate: booking.startDate.toISOString().slice(0, 10),
