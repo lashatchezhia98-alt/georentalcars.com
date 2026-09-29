@@ -1,7 +1,9 @@
+import Image from "next/image";
+
 export default function GeorgiaMapMark() {
   return (
     <div className="hero-map-badge">
-      <img src="/georgia-flag-map.svg" alt="საქართველოს რუკა" />
+      <Image src="/georgia-flag-map.svg" alt="საქართველოს რუკა" width={132} height={82} />
     </div>
   );
 }

@@ -1,15 +1,18 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import BrandMark from "@/components/BrandMark";
 import { signOut } from "next-auth/react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type AdminPickupLocation = { id:string;nameKa:string;nameEn:string;nameRu:string;nameAr:string;fee:number;isActive:boolean };
 type AdminBooking = {
-  id:string;customer:string;car:string;dates:string;createdAt:string;status:string;totalPrice:number;
+  id:string;bookingCode:string;customer:string;car:string;dates:string;createdAt:string;status:string;totalPrice:number;cancelledBy:string|null;cancelledAt:string|null;
   promoCode:string|null;promoCompany:string|null;promoPercent:number;promoAmount:number;
   commissionBase:number;grossCommission:number;netCommission:number;companyRevenue:number;fees:number;
 };
-type AdminStats = { total: number; pending: number; confirmed: number; rejected: number; availableCars: number };
+type AdminStats = { total: number; pending: number; confirmed: number; rejected: number; cancelled:number;availableCars: number };
 type AdminContent = { heroEyebrow:string;heroTitle:string;heroAccent:string;heroCopy:string;fleetEyebrow:string;fleetTitle:string;fleetCopy:string;aboutEyebrow:string;aboutTitle:string;aboutCopy:string;contactEyebrow:string;contactTitle:string;contactCopy:string;footerTagline:string };
 type ContentLocale = "en"|"ka"|"ru"|"ar";
 type LocalizedAdminContent = Record<ContentLocale,AdminContent>;
@@ -30,6 +33,7 @@ export default function AdminDashboard(props: {
   email:string;role:string;coverUrl:string;pickupLocations:AdminPickupLocation[];bookings:AdminBooking[];stats:AdminStats;
   content:LocalizedAdminContent;cars:AdminCar[];categories:AdminCategory[];promoCodes:AdminPromoCode[];contact:AdminContact;discountSettings:AdminDiscountSettings;
 }) {
+  const router=useRouter();
   const [section,setSection]=useState("მთავარი");
   const [cover,setCover]=useState(props.coverUrl);
   const [locations,setLocations]=useState(props.pickupLocations);
@@ -43,11 +47,21 @@ export default function AdminDashboard(props: {
   const [discountSettings,setDiscountSettings]=useState(props.discountSettings);
   const [message,setMessage]=useState("");
   const [bookingActionId,setBookingActionId]=useState("");
+  useEffect(()=>{
+    const sync=window.setTimeout(()=>setBookings(props.bookings),0);
+    return()=>window.clearTimeout(sync);
+  },[props.bookings]);
+  useEffect(()=>{
+    const timer=window.setInterval(()=>router.refresh(),10_000);
+    return()=>window.clearInterval(timer);
+  },[router]);
   const patch = async (url:string, body:unknown, success:string) => {
     setMessage("ინახება…");
     const response=await fetch(url,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
     const data=await response.json().catch(()=>({}));
     setMessage(response.ok?success:(data.error||"შენახვა ვერ მოხერხდა."));
+    if(response.ok)router.refresh();
+    return {response,data};
   };
   const updateBooking=async(id:string,status:"CONFIRMED"|"REJECTED")=>{
     if(bookingActionId)return;
@@ -140,14 +154,14 @@ export default function AdminDashboard(props: {
   };
   return <main className="admin-shell">
     <aside>
-      <a className="brand admin-brand" href="/"><BrandMark/><span className="brand-name">Geo<span>Rental</span>Cars</span></a>
+      <Link className="brand admin-brand" href="/"><BrandMark/><span className="brand-name">Geo<span>Rental</span>Cars</span></Link>
       <nav>{sections.map(([name,icon])=><button className={section===name?"active":""} key={name} onClick={()=>{setSection(name);setMessage("")}}><span>{icon}</span>{name}</button>)}</nav>
-      <a className="back-site" href="/">← საჯარო საიტზე დაბრუნება</a>
+      <Link className="back-site" href="/">← საჯარო საიტზე დაბრუნება</Link>
     </aside>
     <section className="admin-main">
       <header><div><small>ადმინისტრირების პანელი</small><h1>{section}</h1></div><div className="admin-account"><span>{props.email}</span><button onClick={()=>signOut({callbackUrl:"/admin/login"})}>გასვლა</button></div></header>
       {message&&<p className="admin-message">{message}</p>}
-      {section==="მთავარი"&&<><div className="stat-grid"><article><span>ყველა ჯავშანი</span><strong>{bookings.length}</strong><small>სულ მიღებული მოთხოვნა</small></article><article><span>მოლოდინში</span><strong>{bookings.filter(row=>row.status==="PENDING").length}</strong><small>საჭიროებს რეაგირებას</small></article><article><span>დადასტურებული / უარყოფილი</span><strong>{bookings.filter(row=>row.status==="CONFIRMED").length} / {bookings.filter(row=>row.status==="REJECTED").length}</strong><small>მიმდინარე სტატუსები</small></article><article><span>ხელმისაწვდომი მანქანები</span><strong>{props.stats.availableCars}</strong><small>აქტიური ავტომობილები</small></article></div><BookingsTable bookings={bookings.slice(0,8)} onStatus={updateBooking} onDelete={deleteBooking} busyId={bookingActionId} canOverrideConfirmed={props.role==="FULL"}/></>}
+      {section==="მთავარი"&&<><div className="stat-grid"><article><span>ყველა ჯავშანი</span><strong>{bookings.length}</strong><small>სულ მიღებული მოთხოვნა</small></article><article><span>მოლოდინში</span><strong>{bookings.filter(row=>row.status==="PENDING").length}</strong><small>საჭიროებს რეაგირებას</small></article><article><span>დადასტურებული / გაუქმებული</span><strong>{bookings.filter(row=>row.status==="CONFIRMED").length} / {bookings.filter(row=>row.status==="CANCELLED_BY_CUSTOMER").length}</strong><small>მიმდინარე სტატუსები</small></article><article><span>ხელმისაწვდომი მანქანები</span><strong>{props.stats.availableCars}</strong><small>აქტიური ავტომობილები</small></article></div><BookingsTable bookings={bookings.slice(0,8)} onStatus={updateBooking} onDelete={deleteBooking} busyId={bookingActionId} canOverrideConfirmed={props.role==="FULL"}/></>}
       {section==="ჯავშნები"&&<BookingsTable bookings={bookings} onStatus={updateBooking} onDelete={deleteBooking} busyId={bookingActionId} canOverrideConfirmed={props.role==="FULL"}/>}
       {section==="ბუღალტერია"&&<Accounting bookings={bookings}/>}
       {section==="საიტის ტექსტები"&&<Panel title="საიტის ტექსტები — ყველა ენა"><div className="content-language-tabs">{([["en","English"],["ka","ქართული"],["ru","Русский"],["ar","العربية"]] as [ContentLocale,string][]).map(([code,label])=><button type="button" className={contentLocale===code?"active":""} key={code} onClick={()=>setContentLocale(code)}>{label}</button>)}</div><p className="content-language-note">თითოეული ენის ტექსტი დამოუკიდებლად იწერება და ავტომატურად არ ითარგმნება.</p><form className="content-form" dir={contentLocale==="ar"?"rtl":"ltr"} onSubmit={e=>{e.preventDefault();patch("/api/admin/content",{locale:contentLocale,content:content[contentLocale]},`${contentLocale.toUpperCase()} ტექსტები შენახულია.`)}}>
@@ -158,7 +172,7 @@ export default function AdminDashboard(props: {
           ["contactEyebrow","კონტაქტი — პატარა ტექსტი"],["contactTitle","კონტაქტის სათაური"],["contactCopy","კონტაქტის აღწერა"],["footerTagline","Footer-ის ტექსტი"],
         ] as [keyof AdminContent,string][]).map(([key,label])=><label key={key}>{label}{key.endsWith("Copy")?<textarea value={content[contentLocale][key]} onChange={e=>setContent({...content,[contentLocale]:{...content[contentLocale],[key]:e.target.value}})}/>:<input value={content[contentLocale][key]} onChange={e=>setContent({...content,[contentLocale]:{...content[contentLocale],[key]:e.target.value}})}/>}</label>)}<button className="button">{contentLocale.toUpperCase()} ტექსტების შენახვა</button></form></Panel>}
       {section==="ავტომობილები"&&<Panel title="ავტომობილების მართვა" button="+ ავტომობილის დამატება" onButton={addCar}><div className="car-editor">{cars.map((car,index)=><article key={car.id}><div className="admin-photo-manager">
-        <div className="admin-photo-grid">{car.photos.map((photo,photoIndex)=><div key={`${photo.publicId}-${photoIndex}`}><img src={photo.url} alt={`${car.name} ${photoIndex+1}`}/><button type="button" onClick={()=>setCars(rows=>rows.map((item,i)=>i===index?{...item,photos:item.photos.filter((_,p)=>p!==photoIndex)}:item))}>×</button></div>)}</div>
+        <div className="admin-photo-grid">{car.photos.map((photo,photoIndex)=><div key={`${photo.publicId}-${photoIndex}`}><Image src={photo.url} alt={`${car.name} ${photoIndex+1}`} fill sizes="110px"/><button type="button" onClick={()=>setCars(rows=>rows.map((item,i)=>i===index?{...item,photos:item.photos.filter((_,p)=>p!==photoIndex)}:item))}>×</button></div>)}</div>
         <label className="photo-upload">1–6 ფოტოს ატვირთვა<input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={e=>uploadCarPhotos(index,e.target.files)}/></label>
         <small>{car.photos.length}/6 ფოტო</small>
       </div><div className="editor-grid">
@@ -189,14 +203,20 @@ export default function AdminDashboard(props: {
         <div className="discount-preview"><small>მაგალითი</small><strong>{discountSettings.startDay} დღე — {discountSettings.basePercent}%</strong><span>{Math.min(30,discountSettings.startDay+1)} დღე — {Math.min(discountSettings.maxPercent,discountSettings.basePercent+discountSettings.incrementPerDay)}%</span><span>30+ დღე — {Math.min(discountSettings.maxPercent,discountSettings.basePercent+Math.max(0,30-discountSettings.startDay)*discountSettings.incrementPerDay)}%</span></div>
         <button className="button">ლოგიკის შენახვა</button>
       </form></Panel>}
-      {section==="ქოვერის ფოტო"&&<Panel title="მთავარი ქოვერის ფოტო"><form className="cover-form" onSubmit={async e=>{e.preventDefault();setMessage("იტვირთება…");const r=await fetch("/api/admin/site-settings",{method:"POST",body:new FormData(e.currentTarget)});const d=await r.json();if(r.ok){setCover(d.heroImageUrl);setMessage("ქოვერი განახლებულია.")}else setMessage(d.error||"ატვირთვა ვერ მოხერხდა.")}}><img src={cover} alt="მიმდინარე ქოვერი"/><label>აირჩიეთ JPG, PNG ან WebP (მაქს. 10 MB)<input name="cover" type="file" accept="image/jpeg,image/png,image/webp" required/></label><button className="button">ახალი ქოვერის ატვირთვა</button></form></Panel>}
+      {section==="ქოვერის ფოტო"&&<Panel title="მთავარი ქოვერის ფოტო"><form className="cover-form" onSubmit={async e=>{e.preventDefault();setMessage("იტვირთება…");const r=await fetch("/api/admin/site-settings",{method:"POST",body:new FormData(e.currentTarget)});const d=await r.json();if(r.ok){setCover(d.heroImageUrl);setMessage("ქოვერი განახლებულია.")}else setMessage(d.error||"ატვირთვა ვერ მოხერხდა.")}}><Image src={cover} alt="მიმდინარე ქოვერი" width={760} height={300}/><label>აირჩიეთ JPG, PNG ან WebP (მაქს. 10 MB)<input name="cover" type="file" accept="image/jpeg,image/png,image/webp" required/></label><button className="button">ახალი ქოვერის ატვირთვა</button></form></Panel>}
       {section==="მიღება / დაბრუნება"&&<Panel title="ლოკაციები და დამატებითი საფასური"><form className="location-settings" onSubmit={e=>{e.preventDefault();patch("/api/admin/pickup-locations",{locations},"ლოკაციები შენახულია.")}}>{locations.map((location,index)=><div key={location.id} className="location-editor"><label className="location-toggle"><input type="checkbox" checked={location.isActive} onChange={e=>setLocations(v=>v.map((x,i)=>i===index?{...x,isActive:e.target.checked}:x))}/><span>აქტიური ლოკაცია</span></label>{([["nameKa","ქართული"],["nameEn","English"],["nameRu","Русский"],["nameAr","العربية"]] as [keyof AdminPickupLocation,string][]).map(([key,label])=><label key={String(key)}>{label}<input value={String(location[key])} onChange={e=>setLocations(v=>v.map((x,i)=>i===index?{...x,[key]:e.target.value}:x))}/></label>)}<label>დამატებითი თანხა ($)<input type="number" min="0" value={location.fee} onChange={e=>setLocations(v=>v.map((x,i)=>i===index?{...x,fee:Number(e.target.value)}:x))}/></label></div>)}<button className="button">ლოკაციების შენახვა</button></form></Panel>}
-      {section==="კონტაქტი"&&<Panel title="საკონტაქტო ინფორმაციის მართვა"><form className="settings-form" onSubmit={e=>{e.preventDefault();patch("/api/admin/contact",contact,"საკონტაქტო ინფორმაცია შენახულია.")}}>{([["address","ოფისის მისამართი"],["googleMapsUrl","Google Maps-ის ბმული"],["phone","ტელეფონი"],["whatsapp","WhatsApp"]] as [keyof AdminContact,string][]).map(([key,label])=><label key={key}>{label}<input value={contact[key]} onChange={e=>setContact({...contact,[key]:e.target.value})}/></label>)}<button className="button">კონტაქტის შენახვა</button></form></Panel>}
+      {section==="კონტაქტი"&&<Panel title="საკონტაქტო ინფორმაციის მართვა"><form className="settings-form" onSubmit={async e=>{e.preventDefault();const {response,data}=await patch("/api/admin/contact",contact,"საკონტაქტო ინფორმაცია შენახულია და საიტზე განახლდა.");if(response.ok&&data.contact)setContact(data.contact)}}>
+        <label>ოფისის მისამართი<input required value={contact.address} onChange={e=>setContact({...contact,address:e.target.value})}/></label>
+        <label>Google Maps-ის ბმული — ნებაყოფლობითი<input type="url" placeholder="ცარიელის შემთხვევაში შეიქმნება მისამართიდან" value={contact.googleMapsUrl} onChange={e=>setContact({...contact,googleMapsUrl:e.target.value})}/></label>
+        <label>ტელეფონი<input required type="tel" placeholder="+995592710606" value={contact.phone} onChange={e=>setContact({...contact,phone:e.target.value})}/></label>
+        <label>WhatsApp — ნებაყოფლობითი<input type="tel" placeholder="ცარიელის შემთხვევაში გამოიყენება ტელეფონი" value={contact.whatsapp} onChange={e=>setContact({...contact,whatsapp:e.target.value})}/></label>
+        <button className="button">კონტაქტის შენახვა</button>
+      </form></Panel>}
     </section>
   </main>;
 }
 function Panel({title,button,onButton,children}:{title:string;button?:string;onButton?:()=>void;children:React.ReactNode}){return <section className="admin-panel"><div className="panel-head"><h2>{title}</h2>{button&&<button type="button" className="button compact" onClick={onButton}>{button}</button>}</div>{children}</section>}
-function BookingsTable({bookings,onStatus,onDelete,busyId,canOverrideConfirmed}:{bookings:AdminBooking[];onStatus:(id:string,status:"CONFIRMED"|"REJECTED")=>void;onDelete:(id:string)=>void;busyId:string;canOverrideConfirmed:boolean}){return <section className="admin-panel"><div className="panel-head"><div><small>მიმდინარე ოპერაციები</small><h2>ბოლო ჯავშნები</h2></div></div><div className="table-wrap"><table><thead><tr><th>ჯავშანი</th><th>მომხმარებელი</th><th>მანქანა</th><th>თარიღები</th><th>პრომო</th><th>ჯამი</th><th>სტატუსი</th><th>მოქმედება</th></tr></thead><tbody>{bookings.length?bookings.map(row=><tr key={row.id}><td><b>{row.id.slice(-8).toUpperCase()}</b></td><td>{row.customer}</td><td>{row.car}</td><td>{row.dates}</td><td>{row.promoCode?<span className="promo-used"><b>{row.promoCode}</b><small>{row.promoCompany} · {row.promoPercent}%</small></span>:<span className="promo-none">არ გამოუყენებია</span>}</td><td>${row.totalPrice.toFixed(2)}</td><td><span className={`status ${row.status.toLowerCase()}`}>{({PENDING:"მოლოდინში",CONFIRMED:"დადასტურებული",REJECTED:"უარყოფილი"} as Record<string,string>)[row.status]||row.status}</span></td><td><div className="booking-actions"><button disabled={Boolean(busyId)} onClick={()=>onStatus(row.id,"CONFIRMED")}>{busyId===row.id?"მუშავდება…":"დადასტურება"}</button>{(row.status!=="CONFIRMED"||canOverrideConfirmed)&&<button disabled={Boolean(busyId)} onClick={()=>onStatus(row.id,"REJECTED")}>{busyId===row.id?"მუშავდება…":"უარყოფა"}</button>}{row.status==="REJECTED"&&<button className="delete-booking" disabled={Boolean(busyId)} onClick={()=>onDelete(row.id)}>{busyId===row.id?"იშლება…":"წაშლა"}</button>}</div></td></tr>):<tr><td colSpan={8}>ჯავშნები ჯერ არ არის.</td></tr>}</tbody></table></div></section>}
+function BookingsTable({bookings,onStatus,onDelete,busyId,canOverrideConfirmed}:{bookings:AdminBooking[];onStatus:(id:string,status:"CONFIRMED"|"REJECTED")=>void;onDelete:(id:string)=>void;busyId:string;canOverrideConfirmed:boolean}){return <section className="admin-panel"><div className="panel-head"><div><small>მიმდინარე ოპერაციები</small><h2>ბოლო ჯავშნები</h2></div></div><div className="table-wrap"><table><thead><tr><th>ჯავშნის კოდი</th><th>მომხმარებელი</th><th>მანქანა</th><th>თარიღები</th><th>პრომო</th><th>ჯამი</th><th>სტატუსი</th><th>ვინ გააუქმა / დრო</th><th>მოქმედება</th></tr></thead><tbody>{bookings.length?bookings.map(row=><tr key={row.id}><td><b>{row.bookingCode}</b></td><td>{row.customer}</td><td>{row.car}</td><td>{row.dates}</td><td>{row.promoCode?<span className="promo-used"><b>{row.promoCode}</b><small>{row.promoCompany} · {row.promoPercent}%</small></span>:<span className="promo-none">არ გამოუყენებია</span>}</td><td>${row.totalPrice.toFixed(2)}</td><td><span className={`status ${row.status.toLowerCase()}`}>{({PENDING:"მოლოდინში",CONFIRMED:"დადასტურებული",REJECTED:"უარყოფილი",CANCELLED_BY_CUSTOMER:"მომხმარებლის მიერ გაუქმებული"} as Record<string,string>)[row.status]||row.status}</span></td><td>{row.cancelledBy?<span className="cancelled-meta"><b>{row.cancelledBy}</b><small>{row.cancelledAt?new Date(row.cancelledAt).toLocaleString("ka-GE",{timeZone:"Asia/Tbilisi"}):"—"}</small></span>:"—"}</td><td><div className="booking-actions">{["PENDING","CONFIRMED"].includes(row.status)&&<><button disabled={Boolean(busyId)} onClick={()=>onStatus(row.id,"CONFIRMED")}>{busyId===row.id?"მუშავდება…":"დადასტურება"}</button>{(row.status!=="CONFIRMED"||canOverrideConfirmed)&&<button disabled={Boolean(busyId)} onClick={()=>onStatus(row.id,"REJECTED")}>{busyId===row.id?"მუშავდება…":"უარყოფა"}</button>}</>}{row.status==="REJECTED"&&<button className="delete-booking" disabled={Boolean(busyId)} onClick={()=>onDelete(row.id)}>{busyId===row.id?"იშლება…":"წაშლა"}</button>}</div></td></tr>):<tr><td colSpan={9}>ჯავშნები ჯერ არ არის.</td></tr>}</tbody></table></div></section>}
 
 function Accounting({bookings}:{bookings:AdminBooking[]}){
   const today=new Date().toISOString().slice(0,10);
@@ -208,7 +228,7 @@ function Accounting({bookings}:{bookings:AdminBooking[]}){
   const promoBookings=confirmed.filter(row=>row.promoCode);
   const sum=(key:keyof Pick<AdminBooking,"totalPrice"|"promoAmount"|"grossCommission"|"netCommission"|"companyRevenue"|"fees">)=>confirmed.reduce((total,row)=>total+row[key],0);
   const money=(value:number)=>`$${value.toFixed(2)}`;
-  const companies=useMemo(()=>{
+  const companies=(()=>{
     const result=new Map<string,{company:string;code:string;uses:number;discount:number;revenue:number}>();
     for(const row of promoBookings){
       const key=`${row.promoCompany||"—"}::${row.promoCode||"—"}`;
@@ -216,7 +236,7 @@ function Accounting({bookings}:{bookings:AdminBooking[]}){
       current.uses+=1;current.discount+=row.promoAmount;current.revenue+=row.totalPrice;result.set(key,current);
     }
     return [...result.values()].sort((a,b)=>b.uses-a.uses);
-  },[promoBookings]);
+  })();
   return <>
     <section className="admin-panel accounting-filter"><div><small>საანგარიშო პერიოდი</small><h2>ბუღალტერიის ანგარიში</h2></div><label>დან<input type="date" value={from} onChange={e=>setFrom(e.target.value)}/></label><label>მდე<input type="date" value={to} min={from} onChange={e=>setTo(e.target.value)}/></label><button type="button" onClick={()=>{setFrom("");setTo("")}}>მთელი პერიოდი</button></section>
     <div className="accounting-stats">

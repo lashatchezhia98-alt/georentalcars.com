@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import BrandMark from "@/components/BrandMark";
 import GeorgiaMapMark from "@/components/GeorgiaMapMark";
 import ka from "@/messages/ka.json";
@@ -55,10 +56,10 @@ const fallbackPickupLocations: PickupLocation[] = [
   { id: "batumi-airport", nameKa: "ბათუმის საერთაშორისო აეროპორტი", nameEn: "Batumi International Airport", nameRu: "Аэропорт Батуми", nameAr: "مطار باتومي الدولي", fee: 120 },
 ];
 const identityLabels = {
-  ka: { birthDate: "დაბადების თარიღი", pickupTime: "აყვანის დრო — საქართველოს დრო", returnTime: "დაბრუნების დრო — საქართველოს დრო", flightNumber: "ფრენის ნომერი — ნებაყოფლობითი", passportNumber: "პასპორტის ნომერი — ნებაყოფლობითი", driverLicenseNumber: "მართვის მოწმობის ნომერი — ნებაყოფლობითი", driverLicenseExpiry: "მართვის მოწმობის ვადა — ნებაყოფლობითი", promoCode: "პრომო კოდი — ნებაყოფლობითი", returnLocation: "დაბრუნების ადგილი", chooseCar: "აირჩიეთ ავტომობილი" },
-  en: { birthDate: "Date of birth", pickupTime: "Pickup time — Georgia time", returnTime: "Return time — Georgia time", flightNumber: "Flight number — optional", passportNumber: "Passport number — optional", driverLicenseNumber: "Driver’s license number — optional", driverLicenseExpiry: "Driver’s license expiry date — optional", promoCode: "Promo code — optional", returnLocation: "Return location", chooseCar: "Choose a car" },
-  ru: { birthDate: "Дата рождения", pickupTime: "Время получения — по Грузии", returnTime: "Время возврата — по Грузии", flightNumber: "Номер рейса — необязательно", passportNumber: "Номер паспорта — необязательно", driverLicenseNumber: "Номер водительских прав — необязательно", driverLicenseExpiry: "Срок действия водительских прав — необязательно", promoCode: "Промокод — необязательно", returnLocation: "Место возврата", chooseCar: "Выберите автомобиль" },
-  ar: { birthDate: "تاريخ الميلاد", pickupTime: "وقت الاستلام — بتوقيت جورجيا", returnTime: "وقت الإرجاع — بتوقيت جورجيا", flightNumber: "رقم الرحلة — اختياري", passportNumber: "رقم جواز السفر — اختياري", driverLicenseNumber: "رقم رخصة القيادة — اختياري", driverLicenseExpiry: "تاريخ انتهاء رخصة القيادة — اختياري", promoCode: "الرمز الترويجي — اختياري", returnLocation: "موقع الإرجاع", chooseCar: "اختر سيارة" },
+  ka: { birthDate: "დაბადების თარიღი", pickupTime: "აყვანის დრო — საქართველოს დრო", returnTime: "დაბრუნების დრო — საქართველოს დრო", flightNumber: "ფრენის ნომერი — ნებაყოფლობითი", passportNumber: "პასპორტის ნომერი — ნებაყოფლობითი", driverLicenseNumber: "მართვის მოწმობის ნომერი — ნებაყოფლობითი", promoCode: "პრომო კოდი — ნებაყოფლობითი", returnLocation: "დაბრუნების ადგილი", chooseCar: "აირჩიეთ ავტომობილი" },
+  en: { birthDate: "Date of birth", pickupTime: "Pickup time — Georgia time", returnTime: "Return time — Georgia time", flightNumber: "Flight number — optional", passportNumber: "Passport number — optional", driverLicenseNumber: "Driver’s license number — optional", promoCode: "Promo code — optional", returnLocation: "Return location", chooseCar: "Choose a car" },
+  ru: { birthDate: "Дата рождения", pickupTime: "Время получения — по Грузии", returnTime: "Время возврата — по Грузии", flightNumber: "Номер рейса — необязательно", passportNumber: "Номер паспорта — необязательно", driverLicenseNumber: "Номер водительских прав — необязательно", promoCode: "Промокод — необязательно", returnLocation: "Место возврата", chooseCar: "Выберите автомобиль" },
+  ar: { birthDate: "تاريخ الميلاد", pickupTime: "وقت الاستلام — بتوقيت جورجيا", returnTime: "وقت الإرجاع — بتوقيت جورجيا", flightNumber: "رقم الرحلة — اختياري", passportNumber: "رقم جواز السفر — اختياري", driverLicenseNumber: "رقم رخصة القيادة — اختياري", promoCode: "الرمز الترويجي — اختياري", returnLocation: "موقع الإرجاع", chooseCar: "اختر سيارة" },
 };
 const galleryLabels = {
   ka: { view: "დათვალიერება", details: "ავტომობილის დეტალები", previous: "წინა ფოტო", next: "შემდეგი ფოტო", book: "დაჯავშნა" },
@@ -159,17 +160,20 @@ export default function RentalExperience({
   const showCalendar = (event: React.MouseEvent<HTMLInputElement>) => event.currentTarget.showPicker?.();
 
   useEffect(() => {
-    const savedLocale = window.localStorage.getItem("georentalcars-locale");
-    if (savedLocale && ["ka", "en", "ru", "ar"].includes(savedLocale)) setLocale(savedLocale as Locale);
+    const timer = window.setTimeout(() => {
+      const savedLocale = window.localStorage.getItem("georentalcars-locale");
+      if (savedLocale && ["ka", "en", "ru", "ar"].includes(savedLocale)) setLocale(savedLocale as Locale);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     const code = promo.trim().toUpperCase();
-    setPromoDiscount(0);
-    if (!code) { setPromoStatus("idle"); return; }
-    setPromoStatus("checking");
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
+      setPromoDiscount(0);
+      if (!code) { setPromoStatus("idle"); return; }
+      setPromoStatus("checking");
       try {
         const response = await fetch(`/api/promo-codes/validate?code=${encodeURIComponent(code)}`, { signal: controller.signal });
         const result = await response.json();
@@ -180,12 +184,12 @@ export default function RentalExperience({
       } catch (error) {
         if ((error as Error).name !== "AbortError") setPromoStatus("invalid");
       }
-    }, 350);
+    }, code ? 350 : 0);
     return () => { window.clearTimeout(timer); controller.abort(); };
   }, [promo]);
 
   useEffect(() => {
-    document.body.style.overflow = bookingOpen || detailsOpen ? "hidden" : "";
+    document.body.style.overflow = bookingOpen || detailsOpen || menu ? "hidden" : "";
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setBookingOpen(false);
@@ -193,12 +197,15 @@ export default function RentalExperience({
         setMenu(false);
       }
     };
+    const closeDesktopMenu = () => { if (window.innerWidth > 900) setMenu(false); };
     window.addEventListener("keydown", closeOnEscape);
+    window.addEventListener("resize", closeDesktopMenu);
     return () => {
       document.body.style.overflow = "";
       window.removeEventListener("keydown", closeOnEscape);
+      window.removeEventListener("resize", closeDesktopMenu);
     };
-  }, [bookingOpen, detailsOpen]);
+  }, [bookingOpen, detailsOpen, menu]);
 
   function beginBooking(car = selectedCar) {
     setSelectedCar(car); setSent(false); setSubmitError(""); setSubmitting(false);
@@ -235,9 +242,10 @@ export default function RentalExperience({
           <BrandMark />
           <span className="brand-name">Geo<span>Rental</span>Cars</span>
         </a>
-        <nav className={menu ? "nav open" : "nav"} aria-label="Primary navigation">
+        <nav id="mobile-navigation" className={menu ? "nav open" : "nav"} aria-label="Primary navigation">
           <a href="#home" onClick={() => setMenu(false)}>{t.nav.home}</a><a href="#cars" onClick={() => setMenu(false)}>{t.nav.cars}</a><a href="#about" onClick={() => setMenu(false)}>{t.nav.about}</a>
           <a href="#contact" onClick={() => setMenu(false)}>{t.nav.contact}</a>
+          <a href="/cancel-booking" onClick={() => setMenu(false)}>{t.nav.cancel}</a>
         </nav>
         <div className="header-actions">
           <label className="language">
@@ -252,7 +260,7 @@ export default function RentalExperience({
             </select>
           </label>
           <button className="button compact" onClick={() => beginBooking()}>{t.nav.book}</button>
-          <button className="menu-button" aria-label="Toggle menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>☰</button>
+          <button type="button" className="menu-button" aria-label={menu ? "Close menu" : "Open menu"} aria-controls="mobile-navigation" aria-expanded={menu} onClick={() => setMenu((open) => !open)}>{menu ? "×" : "☰"}</button>
         </div>
       </header>
 
@@ -289,7 +297,7 @@ export default function RentalExperience({
         <div className="car-grid">
           {visibleCars.map((car, index) => (
             <article className="car-card" key={car.id}>
-              <button className="car-image car-image-button" onClick={() => viewCar(car)} aria-label={`${galleryLabels[locale].view}: ${car.name}`}><img src={car.image} alt={car.name} /><span className="available">● {t.cars.available}</span>{index === 0 && <span className="popular">{t.cars.popular}</span>}</button>
+              <button className="car-image car-image-button" onClick={() => viewCar(car)} aria-label={`${galleryLabels[locale].view}: ${car.name}`}><Image src={car.image} alt={car.name} fill sizes="(max-width: 620px) 100vw, (max-width: 900px) 50vw, 33vw" /><span className="available">● {t.cars.available}</span>{index === 0 && <span className="popular">{t.cars.popular}</span>}</button>
               <div className="car-body">
                 <div className="car-title"><div><small>{car.category}</small><h3>{car.name}</h3></div></div>
                 <div className="specs"><span>⚙ {car.transmission}</span><span>◉ {car.fuel}</span><span>♙ {car.seats} {t.cars.seats}</span></div>
@@ -320,7 +328,7 @@ export default function RentalExperience({
           </div>
         </div>
         <a className="map-card" href={contact.googleMapsUrl} target="_blank" rel="noreferrer" aria-label="GeoRentalCars-ის ლოკაციის გახსნა Google Maps-ში">
-          <div className="map-lines" /><span className="pin">⌖</span><div className="map-label"><strong>GeoRentalCars</strong><small>8 A. Kartvelishvili St.</small></div>
+          <div className="map-lines" /><span className="pin">⌖</span><div className="map-label"><strong>GeoRentalCars</strong><small>{contact.address}</small></div>
         </a>
       </section>
 
@@ -330,14 +338,14 @@ export default function RentalExperience({
         <section className="car-details-modal" role="dialog" aria-modal="true" aria-labelledby="car-details-title">
           <button className="close" onClick={() => setDetailsOpen(false)} aria-label="Close">×</button>
           <div className="gallery-main">
-            <img src={(selectedCar.photos?.length ? selectedCar.photos : [selectedCar.image])[galleryIndex]} alt={`${selectedCar.name} — ${galleryIndex + 1}`} />
+            <Image src={(selectedCar.photos?.length ? selectedCar.photos : [selectedCar.image])[galleryIndex]} alt={`${selectedCar.name} — ${galleryIndex + 1}`} fill sizes="(max-width: 620px) 100vw, 920px" />
             {(selectedCar.photos?.length || 1) > 1 && <>
               <button className="gallery-arrow previous" aria-label={galleryLabels[locale].previous} onClick={() => setGalleryIndex(index => (index - 1 + (selectedCar.photos?.length || 1)) % (selectedCar.photos?.length || 1))}>‹</button>
               <button className="gallery-arrow next" aria-label={galleryLabels[locale].next} onClick={() => setGalleryIndex(index => (index + 1) % (selectedCar.photos?.length || 1))}>›</button>
             </>}
           </div>
           <div className="gallery-thumbnails">
-            {(selectedCar.photos?.length ? selectedCar.photos : [selectedCar.image]).map((photo,index)=><button key={`${photo}-${index}`} className={galleryIndex===index?"active":""} onClick={()=>setGalleryIndex(index)}><img src={photo} alt={`${selectedCar.name} ${index+1}`}/></button>)}
+            {(selectedCar.photos?.length ? selectedCar.photos : [selectedCar.image]).map((photo,index)=><button key={`${photo}-${index}`} className={galleryIndex===index?"active":""} onClick={()=>setGalleryIndex(index)}><Image src={photo} alt={`${selectedCar.name} ${index+1}`} width={94} height={64}/></button>)}
           </div>
           <div className="car-detail-copy">
             <span className="eyebrow">{galleryLabels[locale].details}</span><h2 id="car-details-title">{selectedCar.name}</h2>
@@ -355,7 +363,7 @@ export default function RentalExperience({
           <form onSubmit={submitBooking}>
             <span className="eyebrow">{t.booking.eyebrow}</span><h2 id="booking-title">{t.booking.title}</h2>
             <div className="selected-car">
-              <img src={selectedCar.image} alt={selectedCar.name} />
+              <Image src={selectedCar.image} alt={selectedCar.name} width={78} height={58} />
               <label>
                 <small>{identityLabels[locale].chooseCar}</small>
                 <select value={selectedCar.id} onChange={(event) => {
@@ -374,7 +382,6 @@ export default function RentalExperience({
               <label>{identityLabels[locale].flightNumber}<input name="flightNumber" autoComplete="off" /></label>
               <label>{identityLabels[locale].passportNumber}<input name="passportNumber" autoComplete="off" /></label>
               <label>{identityLabels[locale].driverLicenseNumber}<input name="driverLicenseNumber" autoComplete="off" /></label>
-              <label>{identityLabels[locale].driverLicenseExpiry}<input name="driverLicenseExpiry" type="date" min={end || today} onClick={showCalendar} /></label>
               <label>{t.booking.start}<input required name="startDate" type="date" min={today} value={start} onClick={showCalendar} onChange={(e) => changeStartDate(e.target.value)} /></label>
               <label>{t.booking.end}<input required name="endDate" type="date" min={start || today} value={end} onClick={showCalendar} onChange={(e) => setEnd(e.target.value)} /></label>
               <label>{identityLabels[locale].pickupTime}<input required name="pickupTime" type="time" /></label>
