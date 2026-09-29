@@ -48,6 +48,7 @@
     "wrangler": "4.92.0"
   },
   "overrides": {
+    "baseline-browser-mapping": "2.11.26",
     "deepmerge-ts": "8.0.2",
     "minimatch": {
       "brace-expansion": "1.1.20"
