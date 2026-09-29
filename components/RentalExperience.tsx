@@ -238,7 +238,12 @@ export default function RentalExperience({
   return (
     <main dir={rtl ? "rtl" : "ltr"} className={rtl ? "rtl" : ""}>
       <header className="topbar">
-        <a href="#home" className="brand" aria-label="GeoRentalCars home">
+        <a href="#home" className="brand" aria-label="GeoRentalCars home" onClick={(event) => {
+          if (window.location.pathname === "/") {
+            event.preventDefault();
+            window.location.reload();
+          }
+        }}>
           <BrandMark />
           <span className="brand-name">Geo<span>Rental</span>Cars</span>
         </a>
