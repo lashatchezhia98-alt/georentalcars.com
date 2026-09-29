@@ -1,1 +1,92 @@
-{"nav":{"home":"Home","cars":"Cars","about":"About","contact":"Contact","book":"Book now"},"hero":{"eyebrow":"Made for the road ahead","title":"Georgia,","accent":"your way.","copy":"Adventure-ready cars. Transparent pricing. Local support — wherever the road takes you.","cta":"Find your car","secondary":"Explore the fleet","rating":"from 420+ trips","support":"roadside support","hidden":"hidden fees"},"booking":{"eyebrow":"Reserve your journey","title":"Book your car","pickup":"Pickup location","start":"Start date","end":"End date","search":"Search available cars","first":"First name","last":"Last name","phone":"Phone or WhatsApp","email":"Email address","promo":"Promo code — optional","days":"days","discount":"Total discount","total":"Total","submit":"Send booking request","conflict":"One or more selected dates are unavailable. Please choose another range.","success":"Request received","successCopy":"We emailed your booking summary. Our team will contact you on WhatsApp to confirm your journey.","done":"Done"},"cars":{"eyebrow":"The right car for every road","title":"Choose your ride","copy":"From Tbilisi streets to mountain passes, every vehicle is prepared, inspected, and ready.","all":"All cars","available":"Available","popular":"Most popular","seats":"seats","day":"day","book":"Book"},"how":{"eyebrow":"Simple from start to finish","title":"The road starts here","copy":"No long paperwork, no surprise costs. Just choose a car and start exploring.","learn":"Why choose us","steps":[{"title":"Choose your car","copy":"Compare our inspected fleet and find your perfect match."},{"title":"Pick your dates","copy":"See live availability and transparent pricing instantly."},{"title":"Hit the road","copy":"Collect at our office or request delivery anywhere in Tbilisi."}]},"contact":{"eyebrow":"Local people. Real support.","title":"Let’s talk","copy":"Questions about a route or vehicle? Our local team is ready to help before, during, and after your trip.","office":"Our office","call":"Call us"},"footer":{"admin":"Admin login"}}
+{
+    "nav": {
+        "home": "Home",
+        "cars": "Cars",
+        "about": "About",
+        "contact": "Contact",
+        "cancel": "Cancel booking",
+        "book": "Book now"
+    },
+    "hero": {
+        "eyebrow": "Made for the road ahead",
+        "title": "Georgia,",
+        "accent": "your way.",
+        "copy": "Adventure-ready cars. Transparent pricing. Local support \u2014 wherever the road takes you.",
+        "cta": "Find your car",
+        "secondary": "Explore the fleet",
+        "rating": "from 420+ trips",
+        "support": "roadside support",
+        "hidden": "hidden fees"
+    },
+    "booking": {
+        "eyebrow": "Reserve your journey",
+        "title": "Book your car",
+        "pickup": "Pickup location",
+        "start": "Start date",
+        "end": "End date",
+        "search": "Search available cars",
+        "first": "First name",
+        "last": "Last name",
+        "phone": "Phone or WhatsApp",
+        "email": "Email address",
+        "promo": "Promo code \u2014 optional",
+        "days": "days",
+        "discount": "Total discount",
+        "total": "Total",
+        "submit": "Send booking request",
+        "conflict": "One or more selected dates are unavailable. Please choose another range.",
+        "success": "Request received",
+        "successCopy": "Your booking request confirmation has been sent by email. Please check your inbox and spam folder.",
+        "done": "Done"
+    },
+    "cars": {
+        "eyebrow": "The right car for every road",
+        "title": "Choose your ride",
+        "copy": "From Tbilisi streets to mountain passes, every vehicle is prepared, inspected, and ready.",
+        "all": "All cars",
+        "available": "Available",
+        "popular": "Most popular",
+        "seats": "seats",
+        "day": "day",
+        "book": "Book"
+    },
+    "how": {
+        "eyebrow": "Simple from start to finish",
+        "title": "The road starts here",
+        "copy": "No long paperwork, no surprise costs. Just choose a car and start exploring.",
+        "learn": "Why choose us",
+        "steps": [
+            {
+                "title": "Choose your car",
+                "copy": "Compare our inspected fleet and find your perfect match."
+            },
+            {
+                "title": "Pick your dates",
+                "copy": "See live availability and transparent pricing instantly."
+            },
+            {
+                "title": "Hit the road",
+                "copy": "Collect at our office or request delivery anywhere in Tbilisi."
+            }
+        ]
+    },
+    "contact": {
+        "eyebrow": "Local people. Real support.",
+        "title": "Let\u2019s talk",
+        "copy": "Questions about a route or vehicle? Our local team is ready to help before, during, and after your trip.",
+        "office": "Our office",
+        "call": "Call us"
+    },
+    "cancelBooking": {
+        "eyebrow": "Self-service cancellation", "title": "Cancel booking", "intro": "Enter your booking code. We will send a secure, time-limited cancellation link to the email address recorded on the booking.",
+        "codeLabel": "Booking code", "codePlaceholder": "GRC-A7K29P", "sendLink": "Send secure cancellation link", "sending": "Sending…", "generic": "If a booking with the specified code exists, a cancellation link has been sent to the email address recorded on the booking.", "genericInstruction": "The booking is not cancelled yet — open the secure link in the email and press “Confirm cancellation”.",
+        "invalidLink": "This cancellation link is invalid.", "expiredLink": "This cancellation link has expired. Request a new link.", "usedLink": "This cancellation link has already been used.", "closed": "This booking can no longer be cancelled online.", "loading": "Checking secure link…",
+        "bookingCode": "Booking code", "car": "Vehicle", "dates": "Pickup and return dates", "locations": "Pickup and return locations", "status": "Current status", "statusPending": "Pending", "statusConfirmed": "Confirmed",
+        "policyTitle": "Cancellation conditions", "policyFree": "Free cancellation is available until the scheduled pickup time. No cancellation fee applies.", "confirm": "Confirm cancellation", "cancelling": "Cancelling…", "successTitle": "Booking cancelled", "successCopy": "The booking has been cancelled. Confirmation emails were sent to you and GeoRentalCars.", "backHome": "Back to home",
+        "emailInstruction": "To cancel, open the secure link below and confirm cancellation. The link is temporary and can be used only once.", "changeInstruction": "To change the vehicle, dates, times or locations, cancel this booking and create a new one.", "emailCancelLink": "Cancel booking securely",
+        "requestEmailSubject": "Your secure booking cancellation link", "requestEmailTitle": "Confirm booking cancellation", "requestEmailLine": "Use the secure button below to review the booking and confirm cancellation.", "cancelledEmailSubject": "Your booking was cancelled", "cancelledEmailTitle": "Booking cancelled", "cancelledEmailLine": "Your booking was cancelled through the secure self-service cancellation page.", "adminCancelledSubject": "Booking cancelled by customer"
+    },
+    "footer": {
+        "admin": "Admin login"
+    }
+}

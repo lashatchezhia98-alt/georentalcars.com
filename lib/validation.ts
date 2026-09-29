@@ -4,10 +4,6 @@ const optionalDocumentNumber = (max: number) =>
     (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
     z.string().trim().min(4).max(max).regex(/^[A-Za-z0-9 -]+$/).optional(),
   );
-const optionalDate = z.preprocess(
-  (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
-  z.iso.date().optional(),
-);
 export const bookingSchema = z.object({
   requestToken: z.uuid(),
   firstName: z.string().trim().min(2).max(60),
@@ -21,7 +17,6 @@ export const bookingSchema = z.object({
   ),
   passportNumber: optionalDocumentNumber(30),
   driverLicenseNumber: optionalDocumentNumber(40),
-  driverLicenseExpiry: optionalDate,
   carId: z.string().min(1),
   language: z.enum(["ka", "en", "ru", "ar"]),
   startDate: z.iso.date(),

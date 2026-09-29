@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import BrandMark from "@/components/BrandMark";
+import Link from "next/link";
 
 export default function AdminLoginPage() {
   const [error, setError] = useState("");
@@ -28,9 +29,9 @@ export default function AdminLoginPage() {
   return (
     <main className="admin-login">
       <section className="login-card">
-        <a className="brand" href="/" aria-label="GeoRentalCars home">
+        <Link className="brand" href="/" aria-label="GeoRentalCars home">
           <BrandMark /><span className="brand-name">Geo<span>Rental</span>Cars</span>
-        </a>
+        </Link>
         <div className="login-heading">
           <span className="eyebrow">OWNER ACCESS</span>
           <h1>ადმინისტრატორის შესვლა</h1>
@@ -42,7 +43,7 @@ export default function AdminLoginPage() {
           {error && <p className="login-error" role="alert">{error}</p>}
           <button className="button" disabled={loading}>{loading ? "მოწმდება…" : "შესვლა"}</button>
         </form>
-        <a className="return-home" href="/">← მთავარ გვერდზე დაბრუნება</a>
+        <Link className="return-home" href="/">← მთავარ გვერდზე დაბრუნება</Link>
       </section>
     </main>
   );

@@ -1,1 +1,92 @@
-{"nav":{"home":"მთავარი","cars":"ავტომობილები","about":"ჩვენ შესახებ","contact":"კონტაქტი","book":"დაჯავშნა"},"hero":{"eyebrow":"შექმნილია მომავალი გზისთვის","title":"საქართველო,","accent":"შენი გზით.","copy":"თავგადასავლებისთვის მზად ავტომობილები. გამჭვირვალე ფასები. ადგილობრივი მხარდაჭერა — ყველგან, სადაც გზა მიგიყვანს.","cta":"იპოვე ავტომობილი","secondary":"ნახე ავტოპარკი","rating":"420+ მგზავრობიდან","support":"გზის დახმარება","hidden":"ფარული გადასახადი"},"booking":{"eyebrow":"დაგეგმე შენი გზა","title":"დაჯავშნე ავტომობილი","pickup":"მიღების ადგილი","start":"დაწყების თარიღი","end":"დასრულების თარიღი","search":"ხელმისაწვდომის მოძებნა","first":"სახელი","last":"გვარი","phone":"ტელეფონი ან WhatsApp","email":"ელფოსტა","promo":"პრომო კოდი — სურვილისამებრ","days":"დღე","discount":"სრული ფასდაკლება","total":"ჯამი","submit":"ჯავშნის მოთხოვნის გაგზავნა","conflict":"არჩეული თარიღებიდან ზოგი დაკავებულია. აირჩიეთ სხვა პერიოდი.","success":"მოთხოვნა მიღებულია","successCopy":"ჯავშნის შეჯამება ელფოსტაზე გამოგიგზავნეთ. ჩვენი გუნდი WhatsApp-ით დაგიკავშირდებათ დასადასტურებლად.","done":"დასრულება"},"cars":{"eyebrow":"სწორი მანქანა ყველა გზისთვის","title":"აირჩიე შენი გზა","copy":"თბილისის ქუჩებიდან მთის უღელტეხილებამდე — ყველა ავტომობილი შემოწმებული და მზადაა.","all":"ყველა","available":"ხელმისაწვდომია","popular":"პოპულარული","seats":"ადგილი","day":"დღე","book":"დაჯავშნა"},"how":{"eyebrow":"მარტივი თავიდან ბოლომდე","title":"გზა აქ იწყება","copy":"გრძელი საბუთებისა და მოულოდნელი ხარჯების გარეშე. აირჩიე ავტომობილი და დაიწყე მოგზაურობა.","learn":"რატომ ჩვენ","steps":[{"title":"აირჩიე ავტომობილი","copy":"შეადარე შემოწმებული ავტოპარკი და იპოვე საუკეთესო."},{"title":"მონიშნე თარიღები","copy":"ნახე ხელმისაწვდომობა და გამჭვირვალე ფასი მყისიერად."},{"title":"გადი გზაზე","copy":"გაიყვანე ოფისიდან ან მოითხოვე მიწოდება თბილისში."}]},"contact":{"eyebrow":"ადგილობრივი გუნდი. რეალური მხარდაჭერა.","title":"დაგვიკავშირდი","copy":"გაქვს კითხვა მარშრუტზე ან ავტომობილზე? ჩვენი გუნდი მზადაა დაგეხმაროს მოგზაურობამდე, დროს და შემდეგ.","office":"ჩვენი ოფისი","call":"დაგვირეკე"},"footer":{"admin":"ადმინისტრატორი"}}
+{
+    "nav": {
+        "home": "\u10db\u10d7\u10d0\u10d5\u10d0\u10e0\u10d8",
+        "cars": "\u10d0\u10d5\u10e2\u10dd\u10db\u10dd\u10d1\u10d8\u10da\u10d4\u10d1\u10d8",
+        "about": "\u10e9\u10d5\u10d4\u10dc \u10e8\u10d4\u10e1\u10d0\u10ee\u10d4\u10d1",
+        "contact": "\u10d9\u10dd\u10dc\u10e2\u10d0\u10e5\u10e2\u10d8",
+        "cancel": "ჯავშნის გაუქმება",
+        "book": "\u10d3\u10d0\u10ef\u10d0\u10d5\u10e8\u10dc\u10d0"
+    },
+    "hero": {
+        "eyebrow": "\u10e8\u10d4\u10e5\u10db\u10dc\u10d8\u10da\u10d8\u10d0 \u10db\u10dd\u10db\u10d0\u10d5\u10d0\u10da\u10d8 \u10d2\u10d6\u10d8\u10e1\u10d7\u10d5\u10d8\u10e1",
+        "title": "\u10e1\u10d0\u10e5\u10d0\u10e0\u10d7\u10d5\u10d4\u10da\u10dd,",
+        "accent": "\u10e8\u10d4\u10dc\u10d8 \u10d2\u10d6\u10d8\u10d7.",
+        "copy": "\u10d7\u10d0\u10d5\u10d2\u10d0\u10d3\u10d0\u10e1\u10d0\u10d5\u10da\u10d4\u10d1\u10d8\u10e1\u10d7\u10d5\u10d8\u10e1 \u10db\u10d6\u10d0\u10d3 \u10d0\u10d5\u10e2\u10dd\u10db\u10dd\u10d1\u10d8\u10da\u10d4\u10d1\u10d8. \u10d2\u10d0\u10db\u10ed\u10d5\u10d8\u10e0\u10d5\u10d0\u10da\u10d4 \u10e4\u10d0\u10e1\u10d4\u10d1\u10d8. \u10d0\u10d3\u10d2\u10d8\u10da\u10dd\u10d1\u10e0\u10d8\u10d5\u10d8 \u10db\u10ee\u10d0\u10e0\u10d3\u10d0\u10ed\u10d4\u10e0\u10d0 \u2014 \u10e7\u10d5\u10d4\u10da\u10d2\u10d0\u10dc, \u10e1\u10d0\u10d3\u10d0\u10ea \u10d2\u10d6\u10d0 \u10db\u10d8\u10d2\u10d8\u10e7\u10d5\u10d0\u10dc\u10e1.",
+        "cta": "\u10d8\u10de\u10dd\u10d5\u10d4 \u10d0\u10d5\u10e2\u10dd\u10db\u10dd\u10d1\u10d8\u10da\u10d8",
+        "secondary": "\u10dc\u10d0\u10ee\u10d4 \u10d0\u10d5\u10e2\u10dd\u10de\u10d0\u10e0\u10d9\u10d8",
+        "rating": "420+ \u10db\u10d2\u10d6\u10d0\u10d5\u10e0\u10dd\u10d1\u10d8\u10d3\u10d0\u10dc",
+        "support": "\u10d2\u10d6\u10d8\u10e1 \u10d3\u10d0\u10ee\u10db\u10d0\u10e0\u10d4\u10d1\u10d0",
+        "hidden": "\u10e4\u10d0\u10e0\u10e3\u10da\u10d8 \u10d2\u10d0\u10d3\u10d0\u10e1\u10d0\u10ee\u10d0\u10d3\u10d8"
+    },
+    "booking": {
+        "eyebrow": "\u10d3\u10d0\u10d2\u10d4\u10d2\u10db\u10d4 \u10e8\u10d4\u10dc\u10d8 \u10d2\u10d6\u10d0",
+        "title": "\u10d3\u10d0\u10ef\u10d0\u10d5\u10e8\u10dc\u10d4 \u10d0\u10d5\u10e2\u10dd\u10db\u10dd\u10d1\u10d8\u10da\u10d8",
+        "pickup": "\u10db\u10d8\u10e6\u10d4\u10d1\u10d8\u10e1 \u10d0\u10d3\u10d2\u10d8\u10da\u10d8",
+        "start": "\u10d3\u10d0\u10ec\u10e7\u10d4\u10d1\u10d8\u10e1 \u10d7\u10d0\u10e0\u10d8\u10e6\u10d8",
+        "end": "\u10d3\u10d0\u10e1\u10e0\u10e3\u10da\u10d4\u10d1\u10d8\u10e1 \u10d7\u10d0\u10e0\u10d8\u10e6\u10d8",
+        "search": "\u10ee\u10d4\u10da\u10db\u10d8\u10e1\u10d0\u10ec\u10d5\u10d3\u10dd\u10db\u10d8\u10e1 \u10db\u10dd\u10eb\u10d4\u10d1\u10dc\u10d0",
+        "first": "\u10e1\u10d0\u10ee\u10d4\u10da\u10d8",
+        "last": "\u10d2\u10d5\u10d0\u10e0\u10d8",
+        "phone": "\u10e2\u10d4\u10da\u10d4\u10e4\u10dd\u10dc\u10d8 \u10d0\u10dc WhatsApp",
+        "email": "\u10d4\u10da\u10e4\u10dd\u10e1\u10e2\u10d0",
+        "promo": "\u10de\u10e0\u10dd\u10db\u10dd \u10d9\u10dd\u10d3\u10d8 \u2014 \u10e1\u10e3\u10e0\u10d5\u10d8\u10da\u10d8\u10e1\u10d0\u10db\u10d4\u10d1\u10e0",
+        "days": "\u10d3\u10e6\u10d4",
+        "discount": "\u10e1\u10e0\u10e3\u10da\u10d8 \u10e4\u10d0\u10e1\u10d3\u10d0\u10d9\u10da\u10d4\u10d1\u10d0",
+        "total": "\u10ef\u10d0\u10db\u10d8",
+        "submit": "\u10ef\u10d0\u10d5\u10e8\u10dc\u10d8\u10e1 \u10db\u10dd\u10d7\u10ee\u10dd\u10d5\u10dc\u10d8\u10e1 \u10d2\u10d0\u10d2\u10d6\u10d0\u10d5\u10dc\u10d0",
+        "conflict": "\u10d0\u10e0\u10e9\u10d4\u10e3\u10da\u10d8 \u10d7\u10d0\u10e0\u10d8\u10e6\u10d4\u10d1\u10d8\u10d3\u10d0\u10dc \u10d6\u10dd\u10d2\u10d8 \u10d3\u10d0\u10d9\u10d0\u10d5\u10d4\u10d1\u10e3\u10da\u10d8\u10d0. \u10d0\u10d8\u10e0\u10e9\u10d8\u10d4\u10d7 \u10e1\u10ee\u10d5\u10d0 \u10de\u10d4\u10e0\u10d8\u10dd\u10d3\u10d8.",
+        "success": "\u10db\u10dd\u10d7\u10ee\u10dd\u10d5\u10dc\u10d0 \u10db\u10d8\u10e6\u10d4\u10d1\u10e3\u10da\u10d8\u10d0",
+        "successCopy": "ჯავშნის მოთხოვნის დასტური გამოგზავნილია თქვენს ელფოსტაზე. გთხოვთ, გადაამოწმოთ Inbox და Spam საქაღალდე.",
+        "done": "\u10d3\u10d0\u10e1\u10e0\u10e3\u10da\u10d4\u10d1\u10d0"
+    },
+    "cars": {
+        "eyebrow": "\u10e1\u10ec\u10dd\u10e0\u10d8 \u10db\u10d0\u10dc\u10e5\u10d0\u10dc\u10d0 \u10e7\u10d5\u10d4\u10da\u10d0 \u10d2\u10d6\u10d8\u10e1\u10d7\u10d5\u10d8\u10e1",
+        "title": "\u10d0\u10d8\u10e0\u10e9\u10d8\u10d4 \u10e8\u10d4\u10dc\u10d8 \u10d2\u10d6\u10d0",
+        "copy": "\u10d7\u10d1\u10d8\u10da\u10d8\u10e1\u10d8\u10e1 \u10e5\u10e3\u10e9\u10d4\u10d1\u10d8\u10d3\u10d0\u10dc \u10db\u10d7\u10d8\u10e1 \u10e3\u10e6\u10d4\u10da\u10e2\u10d4\u10ee\u10d8\u10da\u10d4\u10d1\u10d0\u10db\u10d3\u10d4 \u2014 \u10e7\u10d5\u10d4\u10da\u10d0 \u10d0\u10d5\u10e2\u10dd\u10db\u10dd\u10d1\u10d8\u10da\u10d8 \u10e8\u10d4\u10db\u10dd\u10ec\u10db\u10d4\u10d1\u10e3\u10da\u10d8 \u10d3\u10d0 \u10db\u10d6\u10d0\u10d3\u10d0\u10d0.",
+        "all": "\u10e7\u10d5\u10d4\u10da\u10d0",
+        "available": "\u10ee\u10d4\u10da\u10db\u10d8\u10e1\u10d0\u10ec\u10d5\u10d3\u10dd\u10db\u10d8\u10d0",
+        "popular": "\u10de\u10dd\u10de\u10e3\u10da\u10d0\u10e0\u10e3\u10da\u10d8",
+        "seats": "\u10d0\u10d3\u10d2\u10d8\u10da\u10d8",
+        "day": "\u10d3\u10e6\u10d4",
+        "book": "\u10d3\u10d0\u10ef\u10d0\u10d5\u10e8\u10dc\u10d0"
+    },
+    "how": {
+        "eyebrow": "\u10db\u10d0\u10e0\u10e2\u10d8\u10d5\u10d8 \u10d7\u10d0\u10d5\u10d8\u10d3\u10d0\u10dc \u10d1\u10dd\u10da\u10dd\u10db\u10d3\u10d4",
+        "title": "\u10d2\u10d6\u10d0 \u10d0\u10e5 \u10d8\u10ec\u10e7\u10d4\u10d1\u10d0",
+        "copy": "\u10d2\u10e0\u10eb\u10d4\u10da\u10d8 \u10e1\u10d0\u10d1\u10e3\u10d7\u10d4\u10d1\u10d8\u10e1\u10d0 \u10d3\u10d0 \u10db\u10dd\u10e3\u10da\u10dd\u10d3\u10dc\u10d4\u10da\u10d8 \u10ee\u10d0\u10e0\u10ef\u10d4\u10d1\u10d8\u10e1 \u10d2\u10d0\u10e0\u10d4\u10e8\u10d4. \u10d0\u10d8\u10e0\u10e9\u10d8\u10d4 \u10d0\u10d5\u10e2\u10dd\u10db\u10dd\u10d1\u10d8\u10da\u10d8 \u10d3\u10d0 \u10d3\u10d0\u10d8\u10ec\u10e7\u10d4 \u10db\u10dd\u10d2\u10d6\u10d0\u10e3\u10e0\u10dd\u10d1\u10d0.",
+        "learn": "\u10e0\u10d0\u10e2\u10dd\u10db \u10e9\u10d5\u10d4\u10dc",
+        "steps": [
+            {
+                "title": "\u10d0\u10d8\u10e0\u10e9\u10d8\u10d4 \u10d0\u10d5\u10e2\u10dd\u10db\u10dd\u10d1\u10d8\u10da\u10d8",
+                "copy": "\u10e8\u10d4\u10d0\u10d3\u10d0\u10e0\u10d4 \u10e8\u10d4\u10db\u10dd\u10ec\u10db\u10d4\u10d1\u10e3\u10da\u10d8 \u10d0\u10d5\u10e2\u10dd\u10de\u10d0\u10e0\u10d9\u10d8 \u10d3\u10d0 \u10d8\u10de\u10dd\u10d5\u10d4 \u10e1\u10d0\u10e3\u10d9\u10d4\u10d7\u10d4\u10e1\u10dd."
+            },
+            {
+                "title": "\u10db\u10dd\u10dc\u10d8\u10e8\u10dc\u10d4 \u10d7\u10d0\u10e0\u10d8\u10e6\u10d4\u10d1\u10d8",
+                "copy": "\u10dc\u10d0\u10ee\u10d4 \u10ee\u10d4\u10da\u10db\u10d8\u10e1\u10d0\u10ec\u10d5\u10d3\u10dd\u10db\u10dd\u10d1\u10d0 \u10d3\u10d0 \u10d2\u10d0\u10db\u10ed\u10d5\u10d8\u10e0\u10d5\u10d0\u10da\u10d4 \u10e4\u10d0\u10e1\u10d8 \u10db\u10e7\u10d8\u10e1\u10d8\u10d4\u10e0\u10d0\u10d3."
+            },
+            {
+                "title": "\u10d2\u10d0\u10d3\u10d8 \u10d2\u10d6\u10d0\u10d6\u10d4",
+                "copy": "\u10d2\u10d0\u10d8\u10e7\u10d5\u10d0\u10dc\u10d4 \u10dd\u10e4\u10d8\u10e1\u10d8\u10d3\u10d0\u10dc \u10d0\u10dc \u10db\u10dd\u10d8\u10d7\u10ee\u10dd\u10d5\u10d4 \u10db\u10d8\u10ec\u10dd\u10d3\u10d4\u10d1\u10d0 \u10d7\u10d1\u10d8\u10da\u10d8\u10e1\u10e8\u10d8."
+            }
+        ]
+    },
+    "contact": {
+        "eyebrow": "\u10d0\u10d3\u10d2\u10d8\u10da\u10dd\u10d1\u10e0\u10d8\u10d5\u10d8 \u10d2\u10e3\u10dc\u10d3\u10d8. \u10e0\u10d4\u10d0\u10da\u10e3\u10e0\u10d8 \u10db\u10ee\u10d0\u10e0\u10d3\u10d0\u10ed\u10d4\u10e0\u10d0.",
+        "title": "\u10d3\u10d0\u10d2\u10d5\u10d8\u10d9\u10d0\u10d5\u10e8\u10d8\u10e0\u10d3\u10d8",
+        "copy": "\u10d2\u10d0\u10e5\u10d5\u10e1 \u10d9\u10d8\u10d7\u10ee\u10d5\u10d0 \u10db\u10d0\u10e0\u10e8\u10e0\u10e3\u10e2\u10d6\u10d4 \u10d0\u10dc \u10d0\u10d5\u10e2\u10dd\u10db\u10dd\u10d1\u10d8\u10da\u10d6\u10d4? \u10e9\u10d5\u10d4\u10dc\u10d8 \u10d2\u10e3\u10dc\u10d3\u10d8 \u10db\u10d6\u10d0\u10d3\u10d0\u10d0 \u10d3\u10d0\u10d2\u10d4\u10ee\u10db\u10d0\u10e0\u10dd\u10e1 \u10db\u10dd\u10d2\u10d6\u10d0\u10e3\u10e0\u10dd\u10d1\u10d0\u10db\u10d3\u10d4, \u10d3\u10e0\u10dd\u10e1 \u10d3\u10d0 \u10e8\u10d4\u10db\u10d3\u10d4\u10d2.",
+        "office": "\u10e9\u10d5\u10d4\u10dc\u10d8 \u10dd\u10e4\u10d8\u10e1\u10d8",
+        "call": "\u10d3\u10d0\u10d2\u10d5\u10d8\u10e0\u10d4\u10d9\u10d4"
+    },
+    "cancelBooking": {
+        "eyebrow": "ჯავშნის უსაფრთხო მართვა", "title": "ჯავშნის გაუქმება", "intro": "შეიყვანეთ ჯავშნის კოდი. ჯავშანში დაფიქსირებულ ელფოსტაზე გამოგიგზავნით უსაფრთხო, დროებით გაუქმების ბმულს.",
+        "codeLabel": "ჯავშნის კოდი", "codePlaceholder": "GRC-A7K29P", "sendLink": "უსაფრთხო გაუქმების ბმულის გაგზავნა", "sending": "იგზავნება…", "generic": "თუ მითითებული კოდით ჯავშანი არსებობს, გაუქმების ბმული გამოგზავნილია ჯავშანში დაფიქსირებულ ელფოსტაზე.", "genericInstruction": "ჯავშანი ჯერ არ გაუქმებულა — გახსენით ელფოსტაზე მიღებული უსაფრთხო ბმული და დააჭირეთ „გაუქმების დადასტურებას“.",
+        "invalidLink": "გაუქმების ბმული არასწორია.", "expiredLink": "გაუქმების ბმულს ვადა გაუვიდა. მოითხოვეთ ახალი ბმული.", "usedLink": "გაუქმების ბმული უკვე გამოყენებულია.", "closed": "ამ ჯავშნის ონლაინ გაუქმება აღარ არის შესაძლებელი.", "loading": "უსაფრთხო ბმული მოწმდება…",
+        "bookingCode": "ჯავშნის კოდი", "car": "ავტომობილი", "dates": "მიღებისა და დაბრუნების თარიღები", "locations": "მიღებისა და დაბრუნების ადგილები", "status": "მიმდინარე სტატუსი", "statusPending": "მოლოდინში", "statusConfirmed": "დადასტურებული",
+        "policyTitle": "გაუქმების პირობები", "policyFree": "დაგეგმილ მიღების დრომდე გაუქმება უფასოა და საკომისიო არ მოქმედებს.", "confirm": "გაუქმების დადასტურება", "cancelling": "უქმდება…", "successTitle": "ჯავშანი გაუქმებულია", "successCopy": "ჯავშანი გაუქმდა. დასტური გაეგზავნა თქვენ და GeoRentalCars-ის ადმინისტრატორს.", "backHome": "მთავარ გვერდზე დაბრუნება",
+        "emailInstruction": "გასაუქმებლად გახსენით ქვემოთ მოცემული უსაფრთხო ბმული და დაადასტურეთ მოქმედება. ბმული დროებითი და ერთჯერადია.", "changeInstruction": "ავტომობილის, თარიღის, დროის ან ადგილის შესაცვლელად გააუქმეთ ეს ჯავშანი და შექმენით ახალი.", "emailCancelLink": "ჯავშნის უსაფრთხოდ გაუქმება",
+        "requestEmailSubject": "ჯავშნის გაუქმების უსაფრთხო ბმული", "requestEmailTitle": "დაადასტურეთ ჯავშნის გაუქმება", "requestEmailLine": "ჯავშნის სანახავად და გაუქმების დასადასტურებლად გამოიყენეთ უსაფრთხო ღილაკი.", "cancelledEmailSubject": "თქვენი ჯავშანი გაუქმებულია", "cancelledEmailTitle": "ჯავშანი გაუქმებულია", "cancelledEmailLine": "თქვენი ჯავშანი უსაფრთხო თვითმომსახურების გვერდიდან გაუქმდა.", "adminCancelledSubject": "კლიენტმა ჯავშანი გააუქმა"
+    },
+    "footer": {
+        "admin": "\u10d0\u10d3\u10db\u10d8\u10dc\u10d8\u10e1\u10e2\u10e0\u10d0\u10e2\u10dd\u10e0\u10d8"
+    }
+}

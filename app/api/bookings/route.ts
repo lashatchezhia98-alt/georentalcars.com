@@ -4,6 +4,8 @@ import { calculatePrice, durationDiscount, rentalDays } from "@/lib/pricing";
 import { prisma } from "@/lib/prisma";
 import { sendBookingEmails } from "@/lib/email";
 import { Prisma } from "@prisma/client";
+import { generateBookingCode } from "@/lib/cancellation";
+import { createDirectCancellationUrl } from "@/lib/cancellation-link";
 
 const recent = new Map<string, number>();
 
@@ -23,14 +25,11 @@ export async function POST(request: Request) {
   const normalizedPromoCode = data.promoCode?.trim().toUpperCase() || undefined;
   const existingRequest = await prisma.booking.findUnique({ where: { requestToken: data.requestToken } });
   if (existingRequest) {
-    return NextResponse.json({ id: existingRequest.id, status: existingRequest.status, duplicate: true }, { status: 200 });
+    return NextResponse.json({ id: existingRequest.id, bookingCode: existingRequest.bookingCode, status: existingRequest.status, duplicate: true }, { status: 200 });
   }
   const start = new Date(`${data.startDate}T00:00:00Z`);
   const end = new Date(`${data.endDate}T00:00:00Z`);
   const birthDate = new Date(`${data.birthDate}T00:00:00Z`);
-  const driverLicenseExpiry = data.driverLicenseExpiry
-    ? new Date(`${data.driverLicenseExpiry}T00:00:00Z`)
-    : null;
   const days = rentalDays(start, end);
   const adultCutoff = new Date();
   adultCutoff.setUTCFullYear(adultCutoff.getUTCFullYear() - 20);
@@ -40,9 +39,6 @@ export async function POST(request: Request) {
   }
   if (birthDate > adultCutoff) {
     return NextResponse.json({ error: "The driver must be at least 20 years old" }, { status: 400 });
-  }
-  if (driverLicenseExpiry && driverLicenseExpiry < end) {
-    return NextResponse.json({ error: "Driver’s license must remain valid through the rental end date" }, { status: 400 });
   }
 
   const [car, pickup, returnLocation, discountSettings, promo, conflict] = await Promise.all([
@@ -77,10 +73,12 @@ export async function POST(request: Request) {
   const rentalTotal = calculatePrice(days, dailyPrice, rentalDiscount, promoDiscount);
   const totalPrice = rentalTotal + pickupFee + returnFee;
 
-  let booking;
-  try {
-    booking = await prisma.booking.create({
+  let booking: Awaited<ReturnType<typeof prisma.booking.create>> | undefined;
+  for (let attempt = 0; attempt < 6 && !booking; attempt += 1) {
+    try {
+      booking = await prisma.booking.create({
       data: {
+      bookingCode: generateBookingCode(),
       requestToken: data.requestToken,
       carId: car.id,
       customerName: `${data.firstName} ${data.lastName}`,
@@ -90,7 +88,6 @@ export async function POST(request: Request) {
       flightNumber: data.flightNumber?.toUpperCase(),
       passportNumber: data.passportNumber?.toUpperCase(),
       driverLicenseNumber: data.driverLicenseNumber?.toUpperCase(),
-      driverLicenseExpiry,
       customerLanguage: data.language,
       pickupLocation: pickup.id,
       pickupFee,
@@ -108,17 +105,28 @@ export async function POST(request: Request) {
       promoCodeId: promo?.id,
       promoUsage: promo ? { create: { promoCodeId: promo.id } } : undefined,
       },
-    });
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      const duplicate = await prisma.booking.findUnique({ where: { requestToken: data.requestToken } });
-      if (duplicate) return NextResponse.json({ id: duplicate.id, status: duplicate.status, duplicate: true }, { status: 200 });
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        const duplicate = await prisma.booking.findUnique({ where: { requestToken: data.requestToken } });
+        if (duplicate) return NextResponse.json({ id: duplicate.id, bookingCode: duplicate.bookingCode, status: duplicate.status, duplicate: true }, { status: 200 });
+        continue;
+      }
+      throw error;
     }
-    throw error;
   }
+  if (!booking) return NextResponse.json({ error: "Could not allocate a booking code. Please try again." }, { status: 503 });
+
+  const cancellationPageUrl = await createDirectCancellationUrl({
+    id: booking.id,
+    startDate: booking.startDate,
+    pickupTime: booking.pickupTime,
+  });
 
   await sendBookingEmails({
     language: data.language,
+    bookingCode: booking.bookingCode,
+    cancellationPageUrl,
     customerName: booking.customerName,
     customerPhone: booking.customerPhone,
     customerEmail: booking.customerEmail,
@@ -126,7 +134,6 @@ export async function POST(request: Request) {
     flightNumber: data.flightNumber || "—",
     passportNumber: data.passportNumber || "—",
     driverLicenseNumber: data.driverLicenseNumber || "—",
-    driverLicenseExpiry: data.driverLicenseExpiry || "—",
     carName: car.name,
     carCategory: car.category.name,
     dailyPrice,
@@ -147,6 +154,7 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     id: booking.id,
+    bookingCode: booking.bookingCode,
     status: booking.status,
     totalPrice,
     pickupFee,

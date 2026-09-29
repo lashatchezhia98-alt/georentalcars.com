@@ -1,4 +1,22 @@
 import nodemailer from "nodemailer";
+import en from "@/messages/en.json";
+import ka from "@/messages/ka.json";
+import ru from "@/messages/ru.json";
+import ar from "@/messages/ar.json";
+
+const translations = { en, ka, ru, ar } as const;
+type SupportedLanguage = keyof typeof translations;
+const safe = (value: string | number) => String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] || character);
+const languageOf = (value: string) => (["ka", "en", "ru", "ar"].includes(value) ? value : "en") as SupportedLanguage;
+const transport = () => nodemailer.createTransport({ service: "gmail", auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD } });
+// Booking notifications may intentionally go to a different mailbox than the
+// account used to sign in to the admin panel.
+const adminBookingEmail = () => process.env.ADMIN_BOOKING_EMAIL || process.env.ADMIN_EMAIL || process.env.GMAIL_USER;
+
+function cancellationInstructions(language: SupportedLanguage, bookingCode: string, cancellationPageUrl: string) {
+  const text = translations[language].cancelBooking;
+  return `<div style="margin:24px 0;padding:18px;border-radius:10px;background:#f2efff"><p><strong>${safe(text.bookingCode)}: ${safe(bookingCode)}</strong></p><p>${safe(text.emailInstruction)}</p><p>${safe(text.changeInstruction)}</p><a href="${safe(cancellationPageUrl)}" style="display:inline-block;padding:12px 18px;border-radius:7px;background:#6847ff;color:#fff;text-decoration:none;font-weight:700">${safe(text.emailCancelLink)}</a></div>`;
+}
 
 const copy = {
   ka: { subject: "ჯავშნის მოთხოვნა მიღებულია", line: "ჩვენი გუნდი WhatsApp-ით დაგიკავშირდებათ ჯავშნის დასადასტურებლად." },
@@ -8,10 +26,9 @@ const copy = {
 };
 export async function sendBookingEmails(data: Record<string, string | number>) {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return;
-  const transport = nodemailer.createTransport({ service: "gmail", auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD } });
   const language = (data.language as keyof typeof copy) || "ka";
-  const safe = (value: string | number) => String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] || character);
   const rows: Array<[string, string | number]> = [
+    ["Booking code", data.bookingCode],
     ["Car", `${data.carName} — ${data.carCategory}`],
     ["Rental dates", `${data.startDate} — ${data.endDate}`],
     ["Pickup time (Georgia, UTC+4)", data.pickupTime],
@@ -20,9 +37,11 @@ export async function sendBookingEmails(data: Record<string, string | number>) {
     ["Return location", data.returnLocation],
   ];
   const summary = `<h2>GeoRentalCars.com</h2><table style="border-collapse:collapse;width:100%;max-width:680px">${rows.map(([label, value]) => `<tr><td style="border-bottom:1px solid #ddd;padding:8px;font-weight:600">${safe(label)}</td><td style="border-bottom:1px solid #ddd;padding:8px">${safe(value)}</td></tr>`).join("")}</table>`;
+  const cancellation = cancellationInstructions(languageOf(String(data.language)), String(data.bookingCode), String(data.cancellationPageUrl));
+  const mailer = transport();
   await Promise.all([
-    transport.sendMail({ from: process.env.GMAIL_USER, to: process.env.ADMIN_BOOKING_EMAIL || "lashachezhia@gmail.com", subject: `New booking request — ${data.carName}`, html: summary }),
-    transport.sendMail({ from: process.env.GMAIL_USER, to: String(data.customerEmail), subject: copy[language].subject, html: `${summary}<p>${copy[language].line}</p>` }),
+    ...(adminBookingEmail() ? [mailer.sendMail({ from: process.env.GMAIL_USER, to: adminBookingEmail(), subject: `New booking request — ${data.bookingCode} — ${data.carName}`, html: summary })] : []),
+    mailer.sendMail({ from: process.env.GMAIL_USER, to: String(data.customerEmail), subject: copy[language].subject, html: `${summary}<p>${copy[language].line}</p>${cancellation}` }),
   ]);
 }
 
@@ -47,20 +66,20 @@ const statusCopy = {
 
 export async function sendBookingStatusEmail(data: {
   language: string; status: "CONFIRMED" | "REJECTED"; customerEmail: string; customerName: string;
-  customerPhone:string;birthDate:string;flightNumber:string;passportNumber:string;driverLicenseNumber:string;driverLicenseExpiry:string;
+  customerPhone:string;birthDate:string;flightNumber:string;passportNumber:string;driverLicenseNumber:string;
   carName:string;carCategory:string;startDate:string;endDate:string;pickupTime:string;returnTime:string;
   pickupLocation:string;pickupFee:number;returnLocation:string;returnFee:number;totalDays:number;dailyPrice:number;
   rentalDiscount:number;promoCode:string;promoDiscount:number;totalPrice:number;
+  bookingCode:string;cancellationPageUrl:string;
 }) {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) throw new Error("Email service is not configured");
-  const transport = nodemailer.createTransport({ service: "gmail", auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD } });
   const language = (["ka", "en", "ru", "ar"].includes(data.language) ? data.language : "en") as keyof typeof statusCopy;
   const message = statusCopy[language][data.status];
-  const safe = (value: string | number) => String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] || character);
   const fullRows: Array<[string,string|number]> = [
+    ["Booking code",data.bookingCode],
     ["Customer",data.customerName],["Phone / WhatsApp",data.customerPhone],["Email",data.customerEmail],
     ["Date of birth",data.birthDate],["Flight number",data.flightNumber],["Passport number",data.passportNumber],
-    ["Driver’s license number",data.driverLicenseNumber],["Driver’s license expiry",data.driverLicenseExpiry],
+    ["Driver’s license number",data.driverLicenseNumber],
     ["Car",`${data.carName} — ${data.carCategory}`],["Rental dates",`${data.startDate} ${data.pickupTime} — ${data.endDate} ${data.returnTime} (Georgia, UTC+4)`],
     ["Total days",data.totalDays],["Daily price",`$${data.dailyPrice.toFixed(2)}`],["Pickup location",data.pickupLocation],
     ["Pickup fee",`$${data.pickupFee.toFixed(2)}`],["Return location",data.returnLocation],["Return fee",`$${data.returnFee.toFixed(2)}`],
@@ -69,8 +88,36 @@ export async function sendBookingStatusEmail(data: {
   ];
   const rows=data.status==="CONFIRMED"?fullRows:fullRows.filter(([label])=>["Customer","Car","Rental dates"].includes(label));
   const table=`<table style="border-collapse:collapse;width:100%;margin:22px 0">${rows.map(([label,value])=>`<tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:700">${safe(label)}</td><td style="padding:9px;border-bottom:1px solid #ddd">${safe(value)}</td></tr>`).join("")}</table>`;
-  const html=`<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#10172f"><h2>GeoRentalCars.com</h2><h1 style="font-size:26px">${safe(message.title)}</h1><p>${safe(message.line)}</p>${table}</div>`;
-  const messages=[transport.sendMail({from:process.env.GMAIL_USER,to:data.customerEmail,subject:message.subject,html})];
-  if(data.status==="CONFIRMED")messages.push(transport.sendMail({from:process.env.GMAIL_USER,to:process.env.ADMIN_BOOKING_EMAIL||"lashachezhia@gmail.com",subject:`Confirmed booking — ${data.customerName}`,html}));
+  const cancellation=data.status==="CONFIRMED"?cancellationInstructions(language,data.bookingCode,data.cancellationPageUrl):"";
+  const html=`<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#10172f"><h2>GeoRentalCars.com</h2><h1 style="font-size:26px">${safe(message.title)}</h1><p>${safe(message.line)}</p>${table}${cancellation}</div>`;
+  const mailer=transport();
+  const messages=[mailer.sendMail({from:process.env.GMAIL_USER,to:data.customerEmail,subject:message.subject,html})];
+  if(data.status==="CONFIRMED"&&adminBookingEmail())messages.push(mailer.sendMail({from:process.env.GMAIL_USER,to:adminBookingEmail(),subject:`Confirmed booking — ${data.bookingCode} — ${data.customerName}`,html}));
   await Promise.all(messages);
+}
+
+export async function sendCancellationLinkEmail(data:{language:string;customerEmail:string;bookingCode:string;secureUrl:string}) {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return;
+  const language=languageOf(data.language);const text=translations[language].cancelBooking;
+  const html=`<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#10172f"><h2>GeoRentalCars.com</h2><h1>${safe(text.requestEmailTitle)}</h1><p>${safe(text.requestEmailLine)}</p><p><strong>${safe(text.bookingCode)}: ${safe(data.bookingCode)}</strong></p><a href="${safe(data.secureUrl)}" style="display:inline-block;padding:13px 20px;border-radius:7px;background:#6847ff;color:white;text-decoration:none;font-weight:700">${safe(text.emailCancelLink)}</a><p>${safe(text.changeInstruction)}</p></div>`;
+  await transport().sendMail({from:process.env.GMAIL_USER,to:data.customerEmail,subject:text.requestEmailSubject,html});
+}
+
+export async function sendCancellationConfirmationEmails(data:{language:string;customerEmail:string;bookingCode:string;carName:string;startDate:string;endDate:string;pickupLocation:string;returnLocation:string;cancelledAt:string}) {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) throw new Error("Email service is not configured");
+  const language=languageOf(data.language);const text=translations[language].cancelBooking;
+  const rows:Array<[string,string]>=[[text.bookingCode,data.bookingCode],[text.car,data.carName],[text.dates,`${data.startDate} — ${data.endDate}`],[text.locations,`${data.pickupLocation} — ${data.returnLocation}`],[text.status,text.successTitle]];
+  const table=`<table style="border-collapse:collapse;width:100%;margin:22px 0">${rows.map(([label,value])=>`<tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:700">${safe(label)}</td><td style="padding:9px;border-bottom:1px solid #ddd">${safe(value)}</td></tr>`).join("")}</table>`;
+  const html=`<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#10172f"><h2>GeoRentalCars.com</h2><h1>${safe(text.cancelledEmailTitle)}</h1><p>${safe(text.cancelledEmailLine)}</p>${table}</div>`;
+  const adminEmail=adminBookingEmail();
+  const deliveries=await Promise.allSettled([
+    transport().sendMail({from:process.env.GMAIL_USER,to:data.customerEmail,subject:`${text.cancelledEmailSubject} — ${data.bookingCode}`,html}),
+    ...(adminEmail ? [transport().sendMail({from:process.env.GMAIL_USER,to:adminEmail,subject:`${text.adminCancelledSubject} — ${data.bookingCode}`,html})] : []),
+  ]);
+  const customerSent=deliveries[0]?.status==="fulfilled";
+  const adminSent=Boolean(adminEmail)&&deliveries[1]?.status==="fulfilled";
+  deliveries.forEach((delivery,index)=>{
+    if(delivery.status==="rejected") console.error(`Cancellation ${index===0?"customer":"admin"} email delivery failed`, delivery.reason instanceof Error ? delivery.reason.message : "Unknown mail error");
+  });
+  return {customerSent,adminSent};
 }

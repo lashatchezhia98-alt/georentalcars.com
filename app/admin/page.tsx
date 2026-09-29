@@ -69,11 +69,14 @@ export default async function AdminPage() {
       const money = (value: number) => Math.round(value * 100) / 100;
       return {
         id: booking.id,
+        bookingCode: booking.bookingCode,
         customer: booking.customerName,
         car: booking.car.name,
         dates: `${booking.startDate.toISOString().slice(0, 10)} ${booking.pickupTime || "—"} — ${booking.endDate.toISOString().slice(0, 10)} ${booking.returnTime || "—"}`,
         createdAt: booking.createdAt.toISOString().slice(0, 10),
         status: booking.status,
+        cancelledBy: booking.cancellationSource === "CUSTOMER_SELF_SERVICE" ? "მომხმარებელი" : booking.cancellationSource === "ADMIN" ? "ადმინისტრატორი" : null,
+        cancelledAt: booking.cancelledAt?.toISOString() || null,
         totalPrice: money(Number(booking.totalPrice)),
         promoCode: booking.promoCode?.code || null,
         promoCompany: booking.promoCode?.companyName || null,
@@ -86,7 +89,7 @@ export default async function AdminPage() {
         fees: money(fees),
       };
     })}
-    stats={{ total: bookings.length, pending: stats.PENDING || 0, confirmed: stats.CONFIRMED || 0, rejected: stats.REJECTED || 0, availableCars }}
+    stats={{ total: bookings.length, pending: stats.PENDING || 0, confirmed: stats.CONFIRMED || 0, rejected: stats.REJECTED || 0, cancelled: stats.CANCELLED_BY_CUSTOMER || 0, availableCars }}
     content={localizedContent}
     cars={cars.map((car) => ({
       id: car.id, name: car.name, categoryId: car.categoryId, description: car.description,
