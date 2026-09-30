@@ -19,7 +19,7 @@ const schema = z.object({
 export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const parsed = schema.safeParse(await request.json());
+  const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid pickup location settings" }, { status: 400 });
   await prisma.$transaction(parsed.data.locations.map((location) => prisma.pickupLocation.update({
     where: { id: location.id },

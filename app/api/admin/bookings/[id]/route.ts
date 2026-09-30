@@ -12,7 +12,7 @@ const schema = z.object({ status: z.enum(["CONFIRMED", "REJECTED"]) });
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const parsed = schema.safeParse(await request.json());
+  const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   const { id } = await context.params;
   const booking = await prisma.booking.findUnique({ where: { id }, include: { car: { include: { category: true } }, promoCode: true } });

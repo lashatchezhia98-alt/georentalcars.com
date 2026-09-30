@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   }
   recent.set(ip, now);
 
-  const parsed = bookingSchema.safeParse(await request.json());
+  const parsed = bookingSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid booking details", fields: parsed.error.flatten() }, { status: 400 });
   }

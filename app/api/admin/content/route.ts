@@ -26,7 +26,7 @@ const requestSchema = z.object({ locale: z.enum(["en", "ka", "ru", "ar"]), conte
 export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const parsed = requestSchema.safeParse(await request.json());
+  const parsed = requestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     return NextResponse.json({ error: issue ? `${issue.path.join(".")}: ${issue.message}` : "Invalid content" }, { status: 400 });

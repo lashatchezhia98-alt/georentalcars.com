@@ -9,7 +9,7 @@ const schema = z.object({ categories: z.array(z.object({ id: z.string().min(1), 
 export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const parsed = schema.safeParse(await request.json());
+  const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid categories" }, { status: 400 });
   for (const category of parsed.data.categories) {
     await prisma.carCategory.upsert({ where: { id: category.id }, update: { name: category.name }, create: category });

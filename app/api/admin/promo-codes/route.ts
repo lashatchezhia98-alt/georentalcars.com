@@ -15,7 +15,7 @@ const promoSchema = z.object({
 export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const parsed = z.object({ promoCodes: z.array(promoSchema).max(100) }).safeParse(await request.json());
+  const parsed = z.object({ promoCodes: z.array(promoSchema).max(100) }).safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message || "პრომო-კოდის მონაცემები არასწორია." }, { status: 400 });
   try {
     await prisma.$transaction(parsed.data.promoCodes.map((promo) =>
