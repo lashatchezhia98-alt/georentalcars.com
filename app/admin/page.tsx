@@ -8,6 +8,8 @@ import ka from "@/messages/ka.json";
 import ru from "@/messages/ru.json";
 import ar from "@/messages/ar.json";
 
+const OWNER_COMMISSION_RATE = 0.15;
+
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
@@ -62,7 +64,7 @@ export default async function AdminPage() {
       const subtotal = Number(booking.dailyPrice) * booking.totalDays;
       const commissionBase = subtotal * (1 - Number(booking.discountPercent) / 100);
       const promoAmount = commissionBase * Number(booking.promoDiscountPercent) / 100;
-      const grossCommission = commissionBase * 0.2;
+      const grossCommission = commissionBase * OWNER_COMMISSION_RATE;
       const netCommission = Math.max(0, grossCommission - promoAmount);
       const fees = Number(booking.pickupFee) + Number(booking.returnFee);
       const companyRevenue = Number(booking.totalPrice) - netCommission;
