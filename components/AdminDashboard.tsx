@@ -137,8 +137,8 @@ export default function AdminDashboard(props: {
     const response=await fetch(`/api/admin/promo-codes?id=${encodeURIComponent(promo.id)}`,{method:"DELETE"});
     const data=await response.json().catch(()=>({}));
     if(response.ok){
-      setPromoCodes(rows=>data.archived?rows.map(item=>item.id===promo.id?{...item,isActive:false}:item):rows.filter(item=>item.id!==promo.id));
-      setMessage(data.archived?"გამოყენებული კოდი გაუქმდა და აღარ იმუშავებს.":"პრომო-კოდი წაიშალა.");
+      setPromoCodes(rows=>rows.filter(item=>item.id!==promo.id));
+      setMessage(data.archived?"გამოყენებული კოდი გაუქმდა და სიიდან წაიშალა; ჯავშნის ისტორია შენარჩუნებულია.":"პრომო-კოდი წაიშალა.");
     }else if(response.status===404&&promo.id.startsWith("promo-")){
       setPromoCodes(rows=>rows.filter(item=>item.id!==promo.id));setMessage("შეუნახავი პრომო-კოდი წაიშალა.");
     }else setMessage(data.error||"პრომო-კოდის წაშლა ვერ მოხერხდა.");
