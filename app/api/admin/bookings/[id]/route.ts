@@ -106,8 +106,8 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
   const { id } = await context.params;
   const booking = await prisma.booking.findUnique({ where: { id }, select: { status: true } });
   if (!booking) return NextResponse.json({ error: "ჯავშანი ვერ მოიძებნა." }, { status: 404 });
-  if (booking.status !== "REJECTED") {
-    return NextResponse.json({ error: "ხელით მხოლოდ უარყოფილი ჯავშნის წაშლა შეიძლება." }, { status: 409 });
+  if (!["REJECTED", "CANCELLED_BY_CUSTOMER"].includes(booking.status)) {
+    return NextResponse.json({ error: "ხელით მხოლოდ უარყოფილი ან მომხმარებლის მიერ გაუქმებული ჯავშნის წაშლა შეიძლება." }, { status: 409 });
   }
   await prisma.booking.delete({ where: { id } });
   return NextResponse.json({ ok: true });
