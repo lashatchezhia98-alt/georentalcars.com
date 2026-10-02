@@ -134,6 +134,7 @@ export default function RentalExperience({
   const [submitting, setSubmitting] = useState(false);
   const [requestToken, setRequestToken] = useState("");
   const copy = siteCopy[locale];
+  const depositLabel = { ka: "დეპოზიტი", en: "Deposit", ru: "Депозит", ar: "مبلغ التأمين" }[locale];
   const original = messages[locale];
   const t = { ...original, hero: { ...original.hero, cta: copy.cta }, booking: { ...original.booking, search: copy.search, conflict: copy.conflict, successCopy: copy.successCopy } };
   const transmissionLabel = (value: string) => value === "Automatic" ? copy.automatic : value === "Manual" ? copy.manual : value;
@@ -363,7 +364,7 @@ export default function RentalExperience({
             <span className="eyebrow">{galleryLabels[locale].details}</span><h2 id="car-details-title">{selectedCar.name}</h2>
             <p>{selectedCar.category}</p>
             <div className="specs"><span>⚙ {transmissionLabel(selectedCar.transmission)}</span><span>◉ {fuelLabel(selectedCar.fuel)}</span><span>♙ {selectedCar.seats} {t.cars.seats}</span><span>{selectedCar.engine}</span></div>
-            {selectedCar.pricing && <p>{copy.deposit}: ${selectedCar.pricing.deposit}</p>}
+            {selectedCar.pricing && <p>{depositLabel} {selectedCar.pricing.deposit}$</p>}
             <div className="detail-action"><strong>${dailyRateFor(selectedCar.pricing, selectedCar.price, start, days)} <small>/ {t.cars.day}</small></strong><button className="button" onClick={()=>{setDetailsOpen(false);beginBooking(selectedCar)}}>{galleryLabels[locale].book} ↗</button></div>
           </div>
         </section>
@@ -413,7 +414,7 @@ export default function RentalExperience({
               <div><span>{summaryLabels[locale].pickupFee}</span><span>{pickupFee ? `+$${pickupFee.toFixed(2)}` : summaryLabels[locale].free}</span></div>
               <div><span>{summaryLabels[locale].returnFee}</span><span>{returnFee ? `+$${returnFee.toFixed(2)}` : summaryLabels[locale].free}</span></div>
               <div className="total"><strong>{t.booking.total}</strong><strong>${total.toFixed(2)}</strong></div>
-              {selectedCar.pricing && <div><span>{copy.deposit}</span><strong>${selectedCar.pricing.deposit.toFixed(2)}</strong></div>}
+              {selectedCar.pricing && <div><span>{depositLabel}</span><strong>{selectedCar.pricing.deposit}$</strong></div>}
             </div>
             <p className="pricing-note">{copy.note}</p>
             <button className="button full-button" disabled={!days || hasConflict || submitting || promoStatus==="checking" || promoStatus==="invalid"}>{submitting?sendingLabels[locale]:`${t.booking.submit} ↗`}</button>
