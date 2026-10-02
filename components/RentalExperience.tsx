@@ -8,11 +8,12 @@ import ka from "@/messages/ka.json";
 import en from "@/messages/en.json";
 import ru from "@/messages/ru.json";
 import ar from "@/messages/ar.json";
+import { dailyRateFor, type CarPricing } from "@/lib/pricing";
 
 type Locale = "ka" | "en" | "ru" | "ar";
 type Car = {
   id: string; name: string; category: string; price: number; rating: number;
-  engine: string; seats: number; fuel: string; transmission: string; image: string; photos?: string[];
+  engine: string; seats: number; fuel: string; transmission: string; image: string; photos?: string[]; pricing?: CarPricing | null;
 };
 type PickupLocation = {
   id: string; nameKa: string; nameEn: string; nameRu: string; nameAr: string; fee: number;
@@ -142,12 +143,13 @@ export default function RentalExperience({
   const rtl = locale === "ar";
   const visibleCars = category === "All" ? cars : cars.filter((car) => car.category === category);
   const days = dateDays(start, end);
-  const discount = durationDiscount(days, discountSettings);
+  const discount = selectedCar.pricing ? 0 : durationDiscount(days, discountSettings);
   const selectedPickup = pickupLocations.find((location) => location.id === pickupId) || pickupLocations[0];
   const selectedReturn = pickupLocations.find((location) => location.id === returnId) || pickupLocations[0];
   const pickupFee = selectedPickup?.fee || 0;
   const returnFee = selectedReturn?.fee || 0;
-  const subtotal = days * selectedCar.price;
+  const selectedDailyPrice = dailyRateFor(selectedCar.pricing, selectedCar.price, start, days);
+  const subtotal = days * selectedDailyPrice;
   const durationDiscountAmount = subtotal * discount / 100;
   const afterDurationDiscount = subtotal - durationDiscountAmount;
   const promoDiscountAmount = afterDurationDiscount * promoDiscount / 100;
@@ -356,7 +358,7 @@ export default function RentalExperience({
             <span className="eyebrow">{galleryLabels[locale].details}</span><h2 id="car-details-title">{selectedCar.name}</h2>
             <p>{selectedCar.category}</p>
             <div className="specs"><span>⚙ {selectedCar.transmission}</span><span>◉ {selectedCar.fuel}</span><span>♙ {selectedCar.seats} {t.cars.seats}</span><span>{selectedCar.engine}</span></div>
-            <div className="detail-action"><strong>${selectedCar.price} <small>/ {t.cars.day}</small></strong><button className="button" onClick={()=>{setDetailsOpen(false);beginBooking(selectedCar)}}>{galleryLabels[locale].book} ↗</button></div>
+            <div className="detail-action"><strong>${dailyRateFor(selectedCar.pricing, selectedCar.price, start, days)} <small>/ {t.cars.day}</small></strong><button className="button" onClick={()=>{setDetailsOpen(false);beginBooking(selectedCar)}}>{galleryLabels[locale].book} ↗</button></div>
           </div>
         </section>
       </div>}
@@ -375,7 +377,7 @@ export default function RentalExperience({
                   const car = cars.find((item) => item.id === event.target.value);
                   if (car) setSelectedCar(car);
                 }}>
-                  {cars.map((car) => <option key={car.id} value={car.id}>{car.name} — ${car.price} / {t.cars.day}</option>)}
+                  {cars.map((car) => <option key={car.id} value={car.id}>{car.name} — ${dailyRateFor(car.pricing, car.price, start, days)} / {t.cars.day}</option>)}
                 </select>
                 <span>{selectedCar.category}</span>
               </label>

@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import BrandMark from "@/components/BrandMark";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { emptyCarPricing, pricingDurations, pricingPeriods, type CarPricing } from "@/lib/pricing";
 
 type AdminPickupLocation = { id:string;nameKa:string;nameEn:string;nameRu:string;nameAr:string;fee:number;isActive:boolean };
 type AdminBooking = {
@@ -19,7 +20,7 @@ type LocalizedAdminContent = Record<ContentLocale,AdminContent>;
 type AdminCategory = { id:string;name:string };
 type AdminPromoCode = { id:string;code:string;companyName:string;discountPercent:number;isActive:boolean };
 type AdminCarPhoto = { url:string;publicId:string };
-type AdminCar = { id:string;name:string;categoryId:string;description:string;dailyPrice:number;engineSpecification:string;seatCount:number;fuelType:"PETROL"|"DIESEL";transmission:"AUTOMATIC"|"MANUAL";isAvailable:boolean;photos:AdminCarPhoto[] };
+type AdminCar = { id:string;name:string;categoryId:string;description:string;dailyPrice:number;pricing:CarPricing|null;engineSpecification:string;seatCount:number;fuelType:"PETROL"|"DIESEL";transmission:"AUTOMATIC"|"MANUAL";isAvailable:boolean;photos:AdminCarPhoto[] };
 type AdminContact = { address:string;googleMapsUrl:string;phone:string;whatsapp:string };
 type AdminDiscountSettings = { startDay:number;basePercent:number;incrementPerDay:number;maxPercent:number };
 
@@ -87,7 +88,7 @@ export default function AdminDashboard(props: {
     }finally{setBookingActionId("");}
   };
   const addCar=()=>{
-    setCars(rows=>[...rows,{id:`car-${Date.now()}`,name:"ახალი ავტომობილი",categoryId:categories[0]?.id||"",description:"",dailyPrice:0,engineSpecification:"2.0L",seatCount:5,fuelType:"PETROL",transmission:"AUTOMATIC",isAvailable:true,photos:[]}]);
+    setCars(rows=>[...rows,{id:`car-${Date.now()}`,name:"ახალი ავტომობილი",categoryId:categories[0]?.id||"",description:"",dailyPrice:0,pricing:emptyCarPricing(),engineSpecification:"2.0L",seatCount:5,fuelType:"PETROL",transmission:"AUTOMATIC",isAvailable:true,photos:[]}]);
     setMessage("ახალი ავტომობილის ფორმა დამატებულია — შეავსეთ მონაცემები და ატვირთეთ 1-დან 6-მდე ფოტო.");
   };
   const uploadCarPhotos=async(index:number,files:FileList|null)=>{
@@ -173,6 +174,7 @@ export default function AdminDashboard(props: {
         <label>დასახელება<input value={car.name} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,name:e.target.value}:x))}/></label>
         <label>კატეგორია<select value={car.categoryId} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,categoryId:e.target.value}:x))}>{categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
         <label>ფასი დღეში ($)<input type="number" value={car.dailyPrice} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,dailyPrice:Number(e.target.value)}:x))}/></label>
+        <PricingEditor pricing={car.pricing || emptyCarPricing()} onChange={pricing=>setCars(v=>v.map((x,i)=>i===index?{...x,pricing}:x))}/>
         <label>ძრავი<input value={car.engineSpecification} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,engineSpecification:e.target.value}:x))}/></label>
         <label>ადგილები<input type="number" value={car.seatCount} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,seatCount:Number(e.target.value)}:x))}/></label>
         <label>საწვავი<select value={car.fuelType} onChange={e=>setCars(v=>v.map((x,i)=>i===index?{...x,fuelType:e.target.value as "PETROL"|"DIESEL"}:x))}><option value="PETROL">ბენზინი / ჰიბრიდი</option><option value="DIESEL">დიზელი</option></select></label>
@@ -208,6 +210,12 @@ export default function AdminDashboard(props: {
       </form></Panel>}
     </section>
   </main>;
+}
+function PricingEditor({pricing,onChange}:{pricing:CarPricing;onChange:(pricing:CarPricing)=>void}){
+  const setRate=(period:keyof CarPricing["rates"],duration:string,value:number)=>{
+    onChange({...pricing,rates:{...pricing.rates,[period]:{...pricing.rates[period],[duration]:value}}});
+  };
+  return <div className="pricing-editor wide"><div className="pricing-head"><strong>სეზონური ფასები</strong><label>დეპოზიტი ($)<input type="number" min="0" value={pricing.deposit} onChange={e=>onChange({...pricing,deposit:Number(e.target.value)})}/></label></div><div className="pricing-grid"><div className="pricing-cell pricing-label">პერიოდი</div>{pricingDurations.map(duration=><div className="pricing-cell pricing-label" key={duration}>{duration} დღე</div>)}{pricingPeriods.map(period=><Fragment key={period.id}><div className="pricing-cell pricing-period">{period.label}</div>{pricingDurations.map(duration=><input className="pricing-cell" key={`${period.id}-${duration}`} type="number" min="0" value={pricing.rates[period.id]?.[duration] ?? 0} onChange={e=>setRate(period.id,duration,Number(e.target.value))} aria-label={`${period.label} ${duration} დღე`}/>)}</Fragment>)}</div><small>ფასი ითვლება არჩეული სეზონისა და გაქირავების დღეების დიაპაზონის მიხედვით. ცარიელი/ნულიანი უჯრა იყენებს ძირითად დღიურ ფასს.</small></div>
 }
 function Panel({title,button,onButton,children}:{title:string;button?:string;onButton?:()=>void;children:React.ReactNode}){return <section className="admin-panel"><div className="panel-head"><h2>{title}</h2>{button&&<button type="button" className="button compact" onClick={onButton}>{button}</button>}</div>{children}</section>}
 function VisualContentEditor({locale,value,dir,onChange,onSave}:{locale:ContentLocale;value:AdminContent;dir:"ltr"|"rtl";onChange:(value:AdminContent)=>void;onSave:()=>void}){

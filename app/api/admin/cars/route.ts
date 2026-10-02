@@ -20,6 +20,7 @@ const carSchema = z.object({
   description: z.string().trim().max(600), dailyPrice: z.number().min(0).max(10000),
   engineSpecification: z.string().trim().min(1).max(80), seatCount: z.number().int().min(1).max(30),
   fuelType: z.enum(["PETROL", "DIESEL"]), transmission: z.enum(["AUTOMATIC", "MANUAL"]),
+  pricing: z.object({ deposit: z.number().min(0).max(100000), rates: z.record(z.string(), z.record(z.string(), z.number().min(0).max(10000))) }).optional(),
   isAvailable: z.boolean(), photos: z.array(photoSchema).min(1).max(6),
 });
 const schema = z.object({ cars: z.array(carSchema).max(100) });

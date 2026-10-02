@@ -57,6 +57,7 @@ export default async function Home() {
       name: car.name,
       category: car.category.name,
       price: Number(car.dailyPrice),
+      pricing: car.pricing,
       rating: 0,
       engine: car.engineSpecification,
       seats: car.seatCount,

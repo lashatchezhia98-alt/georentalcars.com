@@ -55,6 +55,7 @@ model Car {
   category            CarCategory  @relation(fields: [categoryId], references: [id])
   description         String
   dailyPrice          Decimal      @db.Decimal(10, 2)
+  pricing             Json?
   engineSpecification String
   seatCount           Int
   fuelType            FuelType

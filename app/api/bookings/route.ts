@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { bookingSchema } from "@/lib/validation";
-import { calculatePrice, durationDiscount, rentalDays } from "@/lib/pricing";
+import { calculatePrice, dailyRateFor, durationDiscount, rentalDays } from "@/lib/pricing";
 import { prisma } from "@/lib/prisma";
 import { sendBookingEmails } from "@/lib/email";
 import { Prisma } from "@prisma/client";
@@ -60,14 +60,14 @@ export async function POST(request: Request) {
   if (conflict) return NextResponse.json({ error: "This car is unavailable for the selected dates" }, { status: 409 });
   if (normalizedPromoCode && !promo) return NextResponse.json({ error: "Promo code is invalid or inactive" }, { status: 400 });
 
-  const rentalDiscount = durationDiscount(days, discountSettings ? {
+  const rentalDiscount = car.pricing ? 0 : durationDiscount(days, discountSettings ? {
     startDay: discountSettings.startDay,
     basePercent: Number(discountSettings.basePercent),
     incrementPerDay: Number(discountSettings.incrementPerDay),
     maxPercent: Number(discountSettings.maxPercent),
   } : undefined);
   const promoDiscount = promo ? Number(promo.discountPercent) : 0;
-  const dailyPrice = Number(car.dailyPrice);
+  const dailyPrice = dailyRateFor(car.pricing as Parameters<typeof dailyRateFor>[0], Number(car.dailyPrice), start, days);
   const pickupFee = Number(pickup.fee);
   const returnFee = Number(returnLocation.fee);
   const rentalTotal = calculatePrice(days, dailyPrice, rentalDiscount, promoDiscount);

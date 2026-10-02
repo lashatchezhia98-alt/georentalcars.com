@@ -95,7 +95,7 @@ export default async function AdminPage() {
     content={localizedContent}
     cars={cars.map((car) => ({
       id: car.id, name: car.name, categoryId: car.categoryId, description: car.description,
-      dailyPrice: Number(car.dailyPrice), engineSpecification: car.engineSpecification, seatCount: car.seatCount,
+      dailyPrice: Number(car.dailyPrice), pricing: car.pricing, engineSpecification: car.engineSpecification, seatCount: car.seatCount,
       fuelType: car.fuelType, transmission: car.transmission, isAvailable: car.isAvailable,
       photos: car.photos.map((photo) => ({ url: photo.secureUrl, publicId: photo.cloudinaryPublicId })),
     }))}
