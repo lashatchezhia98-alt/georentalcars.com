@@ -7,6 +7,7 @@ import en from "@/messages/en.json";
 import ka from "@/messages/ka.json";
 import ru from "@/messages/ru.json";
 import ar from "@/messages/ar.json";
+import { parseCarPricing } from "@/lib/pricing";
 
 const OWNER_COMMISSION_RATE = 0.15;
 
@@ -95,7 +96,7 @@ export default async function AdminPage() {
     content={localizedContent}
     cars={cars.map((car) => ({
       id: car.id, name: car.name, categoryId: car.categoryId, description: car.description,
-      dailyPrice: Number(car.dailyPrice), pricing: car.pricing, engineSpecification: car.engineSpecification, seatCount: car.seatCount,
+      dailyPrice: Number(car.dailyPrice), pricing: parseCarPricing(car.pricing), engineSpecification: car.engineSpecification, seatCount: car.seatCount,
       fuelType: car.fuelType, transmission: car.transmission, isAvailable: car.isAvailable,
       photos: car.photos.map((photo) => ({ url: photo.secureUrl, publicId: photo.cloudinaryPublicId })),
     }))}

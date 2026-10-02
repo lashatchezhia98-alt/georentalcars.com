@@ -4,6 +4,7 @@ import en from "@/messages/en.json";
 import ka from "@/messages/ka.json";
 import ru from "@/messages/ru.json";
 import ar from "@/messages/ar.json";
+import { parseCarPricing } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +58,7 @@ export default async function Home() {
       name: car.name,
       category: car.category.name,
       price: Number(car.dailyPrice),
-      pricing: car.pricing,
+      pricing: parseCarPricing(car.pricing),
       rating: 0,
       engine: car.engineSpecification,
       seats: car.seatCount,

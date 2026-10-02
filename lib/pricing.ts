@@ -9,6 +9,19 @@ export const pricingDurations = ["1-2", "3-5", "6-10", "11-17", "18-28", "29-30"
 export type PricingPeriod = typeof pricingPeriods[number]["id"];
 export type PricingDuration = typeof pricingDurations[number];
 export type CarPricing = { deposit: number; rates: Record<PricingPeriod, Record<PricingDuration, number>> };
+export function parseCarPricing(value: unknown): CarPricing | null {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as { deposit?: unknown; rates?: unknown };
+  if (typeof candidate.deposit !== "number" || !candidate.rates || typeof candidate.rates !== "object") return null;
+  const rates = candidate.rates as Record<string, unknown>;
+  const parsed = Object.fromEntries(pricingPeriods.map(({ id }) => {
+    const period = rates[id];
+    if (!period || typeof period !== "object") return [id, Object.fromEntries(pricingDurations.map((duration) => [duration, 0]))];
+    const source = period as Record<string, unknown>;
+    return [id, Object.fromEntries(pricingDurations.map((duration) => [duration, typeof source[duration] === "number" ? source[duration] : 0]))];
+  })) as CarPricing["rates"];
+  return { deposit: candidate.deposit, rates: parsed };
+}
 export const emptyCarPricing = (): CarPricing => ({
   deposit: 400,
   rates: Object.fromEntries(pricingPeriods.map(({ id }) => [id, Object.fromEntries(pricingDurations.map((duration) => [duration, 0]))])) as CarPricing["rates"],
