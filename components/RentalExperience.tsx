@@ -300,7 +300,6 @@ export default function RentalExperience({
       <section id="cars" className="section cars-section">
         <div className="section-heading">
           <div><span className="eyebrow">{publicCopy.cars.eyebrow}</span><h2>{publicCopy.cars.title}</h2></div>
-          <p>{publicCopy.cars.copy}</p>
         </div>
         <div className="filters">
           {categories.map((item) => <button key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item === "All" ? t.cars.all : item}</button>)}
