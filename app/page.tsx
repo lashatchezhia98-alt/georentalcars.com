@@ -5,6 +5,7 @@ import ka from "@/messages/ka.json";
 import ru from "@/messages/ru.json";
 import ar from "@/messages/ar.json";
 import { parseCarPricing } from "@/lib/pricing";
+import { siteCopy } from "@/lib/site-copy";
 
 export const dynamic = "force-dynamic";
 
@@ -38,10 +39,10 @@ export default async function Home() {
     ? settings.localizedContent as Partial<typeof defaultContent>
     : {};
   const localizedContent = {
-    en: { ...defaultContent.en, ...savedContent.en },
-    ka: { ...defaultContent.ka, ...savedContent.ka },
-    ru: { ...defaultContent.ru, ...savedContent.ru },
-    ar: { ...defaultContent.ar, ...savedContent.ar },
+    en: { ...defaultContent.en, ...siteCopy.en, ...savedContent.en },
+    ka: { ...defaultContent.ka, ...siteCopy.ka, ...savedContent.ka },
+    ru: { ...defaultContent.ru, ...siteCopy.ru, ...savedContent.ru },
+    ar: { ...defaultContent.ar, ...siteCopy.ar, ...savedContent.ar },
   };
   return <RentalExperience
     heroImageUrl={settings?.heroImageUrl || "/hero-wrangler-climb.png"}

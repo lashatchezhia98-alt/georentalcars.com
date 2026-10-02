@@ -9,6 +9,7 @@ import en from "@/messages/en.json";
 import ru from "@/messages/ru.json";
 import ar from "@/messages/ar.json";
 import { dailyRateFor, type CarPricing } from "@/lib/pricing";
+import { siteCopy } from "@/lib/site-copy";
 
 type Locale = "ka" | "en" | "ru" | "ar";
 type Car = {
@@ -132,7 +133,11 @@ export default function RentalExperience({
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [requestToken, setRequestToken] = useState("");
-  const t = messages[locale];
+  const copy = siteCopy[locale];
+  const original = messages[locale];
+  const t = { ...original, hero: { ...original.hero, cta: copy.cta }, booking: { ...original.booking, search: copy.search, conflict: copy.conflict, successCopy: copy.successCopy } };
+  const transmissionLabel = (value: string) => value === "Automatic" ? copy.automatic : value === "Manual" ? copy.manual : value;
+  const fuelLabel = (value: string) => value === "Petrol" ? copy.petrol : value === "Diesel" ? copy.diesel : value;
   const activeContent = content?.[locale];
   const publicCopy = activeContent ? {
     hero: { ...t.hero, eyebrow: activeContent.heroEyebrow, title: activeContent.heroTitle, accent: activeContent.heroAccent, copy: activeContent.heroCopy },
@@ -282,7 +287,6 @@ export default function RentalExperience({
             <button className="button" onClick={() => beginBooking()}>{t.hero.cta} <span>↗</span></button>
             <a className="text-link" href="#cars">{t.hero.secondary} <span>↓</span></a>
           </div>
-          <div className="trust"><span>24/7</span></div>
         </div>
         <div className="availability-card">
           <div className="pickup-field"><span>{t.booking.pickup}</span><select aria-label={t.booking.pickup} value={pickupId} onChange={(event) => setPickupId(event.target.value)}>{pickupLocations.map((location) => <option key={location.id} value={location.id}>{pickupName(location)} — {location.fee ? `+$${location.fee}` : locale === "ka" ? "უფასო" : "Free"}</option>)}</select></div>
@@ -302,18 +306,20 @@ export default function RentalExperience({
           {categories.map((item) => <button key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item === "All" ? t.cars.all : item}</button>)}
         </div>
         <div className="car-grid">
-          {visibleCars.map((car, index) => (
+          {visibleCars.map((car) => (
             <article className="car-card" key={car.id}>
-              <button className="car-image car-image-button" onClick={() => viewCar(car)} aria-label={`${galleryLabels[locale].view}: ${car.name}`}><Image src={car.image} alt={car.name} fill sizes="(max-width: 620px) 100vw, (max-width: 900px) 50vw, 33vw" /><span className="available">● {t.cars.available}</span>{index === 0 && <span className="popular">{t.cars.popular}</span>}</button>
+              <button className="car-image car-image-button" onClick={() => viewCar(car)} aria-label={`${galleryLabels[locale].view}: ${car.name}`}><Image src={car.image} alt={car.name} fill sizes="(max-width: 620px) 100vw, (max-width: 900px) 50vw, 33vw" /></button>
               <div className="car-body">
                 <div className="car-title"><div><small>{car.category}</small><h3>{car.name}</h3></div></div>
-                <div className="specs"><span>⚙ {car.transmission}</span><span>◉ {car.fuel}</span><span>♙ {car.seats} {t.cars.seats}</span></div>
+                <div className="specs"><span>⚙ {transmissionLabel(car.transmission)}</span><span>◉ {fuelLabel(car.fuel)}</span><span>♙ {car.seats} {t.cars.seats}</span></div>
                 <button className="view-details" onClick={() => viewCar(car)}>{galleryLabels[locale].view}</button>
-                <div className="price"><div><strong>${car.price}</strong><span> / {t.cars.day}</span></div><button onClick={() => beginBooking(car)}>{t.cars.book} ↗</button></div>
+                <div className="price"><div><strong>${dailyRateFor(car.pricing, car.price, start, days)}</strong><span> / {t.cars.day}</span></div><button onClick={() => beginBooking(car)}>{t.cars.book} ↗</button></div>
+                {!days && <p className="pricing-note">{copy.base}</p>}
               </div>
             </article>
           ))}
         </div>
+        {visibleCars.length === 0 && <p role="status">{copy.empty}</p>}
       </section>
 
       <section id="about" className="about-section section">
@@ -357,7 +363,8 @@ export default function RentalExperience({
           <div className="car-detail-copy">
             <span className="eyebrow">{galleryLabels[locale].details}</span><h2 id="car-details-title">{selectedCar.name}</h2>
             <p>{selectedCar.category}</p>
-            <div className="specs"><span>⚙ {selectedCar.transmission}</span><span>◉ {selectedCar.fuel}</span><span>♙ {selectedCar.seats} {t.cars.seats}</span><span>{selectedCar.engine}</span></div>
+            <div className="specs"><span>⚙ {transmissionLabel(selectedCar.transmission)}</span><span>◉ {fuelLabel(selectedCar.fuel)}</span><span>♙ {selectedCar.seats} {t.cars.seats}</span><span>{selectedCar.engine}</span></div>
+            {selectedCar.pricing && <p>{copy.deposit}: ${selectedCar.pricing.deposit}</p>}
             <div className="detail-action"><strong>${dailyRateFor(selectedCar.pricing, selectedCar.price, start, days)} <small>/ {t.cars.day}</small></strong><button className="button" onClick={()=>{setDetailsOpen(false);beginBooking(selectedCar)}}>{galleryLabels[locale].book} ↗</button></div>
           </div>
         </section>
@@ -402,12 +409,14 @@ export default function RentalExperience({
             {submitError && <p className="error">{submitError}</p>}
             <div className="summary">
               <div><span>{days || "—"} {t.booking.days}</span><span>${subtotal.toFixed(2)}</span></div>
-              <div><span>{summaryLabels[locale].rentalDiscount} ({discount}%)</span><span>−${durationDiscountAmount.toFixed(2)}</span></div>
+              {discount > 0 && <div><span>{summaryLabels[locale].rentalDiscount} ({discount}%)</span><span>−${durationDiscountAmount.toFixed(2)}</span></div>}
               {promoStatus==="valid"&&<div className="promo-summary"><span>{summaryLabels[locale].promoDiscount} — {promo.trim().toUpperCase()} ({promoDiscount}%)</span><span>−${promoDiscountAmount.toFixed(2)}</span></div>}
               <div><span>{summaryLabels[locale].pickupFee}</span><span>{pickupFee ? `+$${pickupFee.toFixed(2)}` : summaryLabels[locale].free}</span></div>
               <div><span>{summaryLabels[locale].returnFee}</span><span>{returnFee ? `+$${returnFee.toFixed(2)}` : summaryLabels[locale].free}</span></div>
               <div className="total"><strong>{t.booking.total}</strong><strong>${total.toFixed(2)}</strong></div>
+              {selectedCar.pricing && <div><span>{copy.deposit}</span><strong>${selectedCar.pricing.deposit.toFixed(2)}</strong></div>}
             </div>
+            <p className="pricing-note">{copy.note}</p>
             <button className="button full-button" disabled={!days || hasConflict || submitting || promoStatus==="checking" || promoStatus==="invalid"}>{submitting?sendingLabels[locale]:`${t.booking.submit} ↗`}</button>
           </form>}
         </section>
